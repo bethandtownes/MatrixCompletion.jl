@@ -1,0 +1,13 @@
+name = "MatrixCompletion"
+uuid = "ed8b4348-a40e-11e9-0eb8-b76d3f7c2c42"
+authors = ["jasonsun0310 <ds653@cornell.edu>"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
