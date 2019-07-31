@@ -1,6 +1,13 @@
-using MatrixCompletion
+# using MatrixCompletion
 using Test
 
-@testset "MatrixCompletion.jl" begin
-    # Write your own tests here.
+
+
+
+# @testset "IndexTools Test" begin include("./Indexing_test.jl") end
+
+
+
+@testset "IndexingTools.jl" begin
+    include("./Indexing_test.jl")
 end
