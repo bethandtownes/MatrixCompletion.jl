@@ -54,19 +54,32 @@ end
 
 
 
-struct Semi
+module ProjectionTools
+import Arpack
+struct L1Ball end
+struct L2Ball end
+struct Interval end
 
 struct LowRankManifold
     rank::T where T<:Integer
-    function LowRankManifold(target_rank::T) where T<:Integer
+    function LowRankManifold(target_rank::T = 1) where T<:Integer
         instance = new();
         instance.rank = target_rank;
         return instanct
     end
 end
-    
 
-function project()
+function project(to::LowRankManifold,x::Array{T,2};use_arpack=false) where T<:Real
+    F = nothing;
+    target_rank = to.target_rank;
+    if !use_arpack
+        F = svd(x);
+    else
+        F = svds(x,)
+    end
+end
+end
+
 
 
 
