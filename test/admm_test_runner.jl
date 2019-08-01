@@ -59,7 +59,6 @@ ta = a'+a
 
 
 
-using Arpack
 using LinearAlgebra
 import Random
 
