@@ -34,6 +34,7 @@ function _check_poisson(col::DefaultNumberType)
 end
 
 
+
 function _check_gaussian(col::DefaultNumberType)
     if !_check_poisson(col) && !_check_bernoulli(col)
         return true;
@@ -100,7 +101,7 @@ function construct_type_matrix(input_matrix::Array{T,2}) where T<:Union{S,Missin
 end
 
 
-function construct_index_trakcer(;input_type_matrix::Array{Union{DIST_FLAGS,Missing},2})
+function construct_index_tracker(;input_type_matrix::Array{Union{DIST_FLAGS,Missing},2})
     return IndexTracker(input_type_matrix);
 end
 

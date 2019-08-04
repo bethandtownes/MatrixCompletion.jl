@@ -8,7 +8,6 @@ include("./Losses.jl")
 include("./Convex/Convex.jl")
 
 
-abstract type ModelSpecification end
 
 
 

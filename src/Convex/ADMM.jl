@@ -1,17 +1,19 @@
 module ADMM
 using Printf
-# include("../Utilities/Utilities.jl")
-# include("../Losses.jl")
+
 using LinearAlgebra
 using SparseArrays
 
-import MatrixCompletion.Losses:train,train_logistic
-import MatrixCompletion.Losses
-import MatrixCompletion.Utilities.Indexing:DIST_FLAGS,Bernoulli,Gaussian,Poisson,Gamma,NegativeBinomial
-import MatrixCompletion.Utilities.Indexing:construct_type_matrix,construct_index_trakcer
-# import .Utilities.Indexing:DIST_FLAGS
+# import MatrixCompletion.Losses:train,train_logistic
+# import MatrixCompletion.Losses
+# import MatrixCompletion.Utilities.Indexing:DIST_FLAGS,Bernoulli,Gaussian,Poisson,Gamma,NegativeBinomial
+# import MatrixCompletion.Utilities.Indexing:construct_type_matrix,construct_index_trakcer
 
 
+import ...Losses:train,train_logistic
+import ...Losses
+import ...Utilities.Indexing:DIST_FLAGS,Bernoulli,Gaussian,Poisson,Gamma,NegativeBinomial
+import ...Utilities.Indexing:construct_type_matrix,construct_index_trakcer
 
 const DefaultMatrix = Array{Union{T,Missing}} where T<:Real
 const TypeMatrix = Union{Array{Union{Missing,DIST_FLAGS},2},Array{DIST_FLAGS,2}}
@@ -54,31 +56,31 @@ end
 
 
 
-module ProjectionTools
-import Arpack
-struct L1Ball end
-struct L2Ball end
-struct Interval end
+# module ProjectionTools
+# import Arpack
+# struct L1Ball end
+# struct L2Ball end
+# struct Interval end
 
-struct LowRankManifold
-    rank::T where T<:Integer
-    function LowRankManifold(target_rank::T = 1) where T<:Integer
-        instance = new();
-        instance.rank = target_rank;
-        return instanct
-    end
-end
+# struct LowRankManifold
+#     rank::T where T<:Integer
+#     function LowRankManifold(target_rank::T = 1) where T<:Integer
+#         instance = new();
+#         instance.rank = target_rank;
+#         return instance
+#     end
+# end
 
-function project(to::LowRankManifold,x::Array{T,2};use_arpack=false) where T<:Real
-    F = nothing;
-    target_rank = to.target_rank;
-    if !use_arpack
-        F = svd(x);
-    else
-        F = svds(x,)
-    end
-end
-end
+# function project(to::LowRankManifold,x::Array{T,2};use_arpack=false) where T<:Real
+#     F = nothing;
+#     target_rank = to.target_rank;
+#     if !use_arpack
+#         F = svd(x);
+#     else
+#         F = svds(x,)
+#     end
+# end
+# end
 
 
 
@@ -192,11 +194,11 @@ function predict(;x::Array{T,2},obs::TypeMatrix) where T<:Union{Real,Missing}
         prediction[columns_bernoulli] = _predict_bernoulli(prediction[columns_bernoulli]);
     end
 
-    if !isempty(column_poisson)
-        prediction[columns_poisson] = _predict_poisson(prediction[column_poisson]);
+    if !isempty(columns_poisson)
+        prediction[columns_poisson] = _predict_poisson(prediction[columns_poisson]);
     end
-    if !isempty(column_gamma)
-        prediction[column_gamma] = _predict_gamma(prediction[column_gamma]);
+    if !isempty(columns_gamma)
+        prediction[columns_gamma] = _predict_gamma(prediction[columns_gamma]);
     end
     if !isempty(columns_negative_binomial)
         prediction[columns_negative_binomial] = _predict_negative_binomial(prediction[columns_negative_binomial]);
@@ -239,7 +241,7 @@ function complete(;A::DefaultMatrix          = nothing,
                    use_autodiff::Bool        = false,
                    gd_iter::Int64            = 50,
                    debug_mode::Bool          = false)
-    if A == nothing
+    if isnothing(A)
         error("please provide data matrix");
     end
     Fnorm         = x -> norm(x,2);
