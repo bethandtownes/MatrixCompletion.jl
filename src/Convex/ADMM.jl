@@ -13,7 +13,7 @@ using SparseArrays
 import ...Losses:train,train_logistic
 import ...Losses
 import ...Utilities.Indexing:DIST_FLAGS,Bernoulli,Gaussian,Poisson,Gamma,NegativeBinomial
-import ...Utilities.Indexing:construct_type_matrix,construct_index_trakcer
+import ...Utilities.Indexing:construct_type_matrix,construct_index_tracker
 
 const DefaultMatrix = Array{Union{T,Missing}} where T<:Real
 const TypeMatrix = Union{Array{Union{Missing,DIST_FLAGS},2},Array{DIST_FLAGS,2}}
@@ -223,13 +223,6 @@ end
 
 
 
-
-
-
-
-
-
-
 function complete(;A::DefaultMatrix          = nothing,
                    α::Float64                = maximum(A[findall(x -> !ismissing(x),A)]),
                    λ::Float64                = 5e-1,
@@ -247,7 +240,7 @@ function complete(;A::DefaultMatrix          = nothing,
     Fnorm         = x -> norm(x,2);
     d1,d2         = size(A);
     type_matrix   = construct_type_matrix(A);
-    index_tracker = construct_index_trakcer(input_type_matrix = type_matrix);
+    index_tracker = construct_index_tracker(input_type_matrix = type_matrix);
     Aobs        = A[index_tracker.Observed];
     AobsBinary  = A[index_tracker.Bernoulli];
     AobsCont    = A[index_tracker.Gaussian];

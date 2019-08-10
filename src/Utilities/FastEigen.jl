@@ -63,25 +63,25 @@ mutable struct NativeLOBPCG
 end
 
 
-function eigs(x::Array{Float64,2};
-              nev::Integer=6,eigen_vectors::Bool=true,order::Symbol=:LR,algorithm::NativeEigen)
+function eigs(algorithm::NativeEigen,x::Array{Float64,2};
+              nev::Integer=6,eigen_vectors::Bool=true,order::Symbol=:LR)
     local eigen_val_id;
     eigen_decomp = LinearAlgebra.eigen(x);
     if order == :LR
-        eigen_val_id = Base.partialsortperm(eigen_decomp.eigenvalues,nev,rev=true);
+        eigen_val_id = Base.partialsortperm(eigen_decomp.values,1:nev,rev=true);
     elseif order == :SR
-        eigen_val_id = Base.partialsortperm(eigen_decomp.eigenvalues,nev,rev=false)
+        eigen_val_id = Base.partialsortperm(eigen_decomp.values,1:nev,rev=false)
     end
     if eigen_vectors == true
-        return eigen_decomp.eigenvalues[eigen_val_id],eigen_decomp.eigen_vectorss[:,eigen_val_id] 
+        return eigen_decomp.values[eigen_val_id],eigen_decomp.vectors[:,eigen_val_id] 
     end
-    return eigen_decomp.eigenvalues[eigen_val_id];
+    return eigen_decomp.values[eigen_val_id];
 end
 
 
  
-function eigs(x::Array{Float64,2};
-              nev::Integer=6,eigen_vectors::Bool=true,order::Symbol=:LR,algorithm::NativeLOBPCG) 
+function eigs(algorithm::NativeLOBPCG,x::Array{Float64,2};
+              nev::Integer=6,eigen_vectors::Bool=true,order::Symbol=:LR) 
     local eigen_decomp;
     if order == :LR
         eigen_decomp = IterativeSolvers.lobpcg(x,true,6);

@@ -1,4 +1,5 @@
-include("sparse_eigen_test.jl")
+try include("sparse_eigen_test.jl") catch end 
+try include("./test/sparse_eigen_test.jl") catch end
 
-test_lobpcg_wrapper();
-test_lobpcg_via_import();
+test_native_eigen()
+
