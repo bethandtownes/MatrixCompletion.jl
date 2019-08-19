@@ -57,9 +57,7 @@ function train(loss,fx,y,c,ρ;γ=0.02,iter=20)
     curFx = fx;
     for i = 1:iter
         curFx = curFx .- γ .* ∇(curFx,y,c,ρ);
-        if i == iter
-            @printf("iter:%d, loss[bernoulli]=%f\n",i,loss_logistic(curFx,y,c,ρ));
-        end
+        # @printf("iter:%d, loss[bernoulli]=%f\n",i,∇(curFx,y,c,ρ));
     end
     return curFx;
 end

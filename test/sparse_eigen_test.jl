@@ -26,6 +26,7 @@ function get_projection(v,e)
     return e * Diagonal(v) * e';
 end
 
+
 function test_native_eigen(;dim=500,nev=20,repeat=5)
     for i = 1:repeat   
         input = create_symmetric_matrix(dim);
@@ -34,6 +35,7 @@ function test_native_eigen(;dim=500,nev=20,repeat=5)
         @test norm(get_projection(λ,X) - get_projection(λ0,X0),2)<1e-3;
     end
 end
+
 
 
 function test_lobpcg_wrapper(;dim=1000,nev=20,repeat=5)

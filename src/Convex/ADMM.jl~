@@ -10,8 +10,6 @@ using SparseArrays
 # import MatrixCompletion.Utilities.Indexing:construct_type_matrix,construct_index_trakcer
 
 
-
-
 import ...Losses:train,train_logistic
 import ...Losses
 import ...Utilities.Indexing:DIST_FLAGS,Bernoulli,Gaussian,Poisson,Gamma,NegativeBinomial
@@ -67,7 +65,7 @@ function l1BallProjection(v,b)
     if (norm(v,1) <= b);
         return v
     end
-    n = length(v);
+    n = length(va);
     nvec = hcat(1:n...)'[:];
     vv = sort(abs.(v),lt = (x,y) -> !isless(x,y));
     idxsort = sortperm(abs.(v),lt = (x,y) -> !isless(x,y));

@@ -6,3 +6,8 @@ function test_scope()
     end
     return eigen_v
 end
+
+
+function test_emacs()
+    print("hello")
+end

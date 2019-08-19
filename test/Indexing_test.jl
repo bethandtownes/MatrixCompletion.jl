@@ -26,7 +26,7 @@ poissonBernoulliDifferenceTest2 = Random.rand(Distributions.Bernoulli(0.4),100);
 
 
 
-import MatrixCompletion.Utilities.Indexing:construct_type_matrix,construct_index_trakcer,DIST_FLAGS
+import MatrixCompletion.Utilities.Indexing:construct_type_matrix,construct_index_tracker,DIST_FLAGS
 import MatrixCompletion.Utilities.Indexing:Bernoulli,
                                            Poisson,
                                            Gaussian,
@@ -68,13 +68,11 @@ type_matrix_test_expected4 = hcat(type_matrix_test_expected4_part1,type_matrix_t
 @test construct_type_matrix(type_matrix_test_input4) == type_matrix_test_expected4
 
 
-
-
 import MatrixCompletion.Utilities.Indexing:IndexTracker
-import MatrixCompletion.Utilities.Indexing:construct_index_trakcer
+import MatrixCompletion.Utilities.Indexing:construct_index_tracker
 # INDEX TRACKER TEST 1
 id_tracker_test_input1 = construct_type_matrix(Random.rand(Distributions.Gaussian(0,1),10,10))
-id_tracker_test_output1 = construct_index_trakcer(input_type_matrix = id_tracker_test_input1)
+id_tracker_test_output1 = construct_index_tracker(input_type_matrix = id_tracker_test_input1)
 id_tracker_test_expect1_gaussian = [CartesianIndex(i,j) for i in 1:10 for j in 1:10]
 @test sort(id_tracker_test_expect1_gaussian) == sort(id_tracker_test_output1.Gaussian)
 @test isempty(id_tracker_test_output1.Gamma)
@@ -88,7 +86,7 @@ id_tracker_test_input2 = construct_type_matrix(rand([(Distributions.Bernoulli(0.
                                                      (Distributions.Gaussian(5,10), 100=>25, 10),
                                                      (Distributions.Poisson(10),    100=>25, 10),
                                                      (Distributions.Gaussian(0,1),  100=>25, 10)]))
-id_tracker_test_output2 = construct_index_trakcer(input_type_matrix = id_tracker_test_input2)
+id_tracker_test_output2 = construct_index_tracker(input_type_matrix = id_tracker_test_input2)
 id_tracker_test_expect2_gaussian = [CartesianIndex(i,j) for i in 1:100 for j in [26:50;76:100]]
 id_tracker_test_expect2_bernoulli = [CartesianIndex(i,j) for i in 1:100 for j in 1:25]
 id_tracker_test_expect2_poisson = [CartesianIndex(i,j) for i in 1:100 for j in 51:75]
@@ -98,3 +96,6 @@ id_tracker_test_expect2_poisson = [CartesianIndex(i,j) for i in 1:100 for j in 5
 @test isempty(id_tracker_test_output2.Missing)
 @test isempty(id_tracker_test_output2.Gamma)
 @test isempty(id_tracker_test_output2.NegativeBinomial)
+
+
+
