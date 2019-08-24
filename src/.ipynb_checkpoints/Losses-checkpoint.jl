@@ -3,7 +3,7 @@ module Losses
 using Printf
 import Random, AutoGrad, Distributions
 
-using ..Concepts
+using MatrixCompletion.Concepts
 
 struct SGD end
 
@@ -42,12 +42,12 @@ struct SGD end
 
 
 
-#struct Loss{T} end 
+struct Loss{T} end 
 
 
-#export Loss,ExponentialFamily,
- #   AbstractBinomial,AbstractGaussian,AbstractPoisson,AbstractGamma,AbstractNegativeBinomial,AbstractGeometric
-export evaluate,grad,train
+export Loss,ExponentialFamily,
+    AbstractBinomial,AbstractGaussian,AbstractPoisson,AbstractGamma,AbstractNegativeBinomial,AbstractGeometric
+export provide,evaluate,grad,train
 
 
 loss_logistic(x,y,c,ρ) = -sum(y .* log.(σ.(x)) .+ (1 .- y) .* log.(1 .- σ.(x))) .+  sum(ρ .* (x .- c).^2);
@@ -58,7 +58,7 @@ loss_logistic(x,y,c,ρ) = -sum(y .* log.(σ.(x)) .+ (1 .- y) .* log.(1 .- σ.(x)
 #                             Gaussian Loss                                    # 
 ################################################################################
 
-function Concepts.provide(loss::Loss{AbstractGaussian})
+function provide(loss::Loss{AbstractGaussian})
     #TODO
 end
 
@@ -83,7 +83,7 @@ end
 
 
 
-function Concepts.provide(loss::Loss{AbstractBinomial})
+function provide(loss::Loss{AbstractBinomial})
      L(x,y,c,ρ) = -sum(y .* log.(σ.(x)) .+ (1 .- y) .* log.(1 .- σ.(x))) .+  sum(ρ .* (x .- c).^2);
     return L
 end
@@ -112,7 +112,7 @@ end
 
 
 
-function Concepts.provide(loss::Loss{AbstractPoisson})
+function provide(loss::Loss{AbstractPoisson})
     L(x,y,c,ρ) = sum(exp.(x) .- y .* x) + sum(ρ .* (x .- c).^2)
     return L;
 end
@@ -128,8 +128,7 @@ end
 
 function grad(loss::Loss{AbstractPoisson},
               x,y,c,ρ)
-    #    return # sum(exp.(x) .- y)  .+ (2*ρ) .* (x .- c)
-    return exp.(x) .- y .+ (2*ρ) .* (x .- c)
+    return  sum(exp.(x) .- y)  .+ (2*ρ) .* (x .- c)
 end
 
 
@@ -138,22 +137,20 @@ end
 ################################################################################
 
 
-function Concepts.provide(loss::Loss{AbstractGamma})
-    L(x,y,c,ρ) = sum(-x .* y .- log.(-x))+ sum(ρ .* (x .- c).^2)
-   return L
+function provide(loss::Loss{AbstractGamma})
+
 end
 
 
 function evaluate(loss::Loss{AbstractGamma},x,y,c,ρ)
-    return sum(x .* y .- log.(x))+ sum(ρ .* (x .- c).^2)
+
+    return sum(-x .* y .- log.(x))+ sum(ρ .* (x .- c).^2)
+    
 end
 
 
-
-
-## Use the reciprocal link instead of the negative reciprocal link
 function grad(loss::Loss{AbstractGamma},x,y,c,ρ)
-    return y .- (1 ./ x) .+ (2*ρ) .* (x .- c)
+    return sum(y .- (1 ./ x)) .+ (2*ρ) .* (x .- c)
 end
    
 

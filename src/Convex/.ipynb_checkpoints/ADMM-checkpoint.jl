@@ -1,6 +1,6 @@
-modulpne ADMM
-
+module ADMM
 using Printf
+
 using LinearAlgebra
 using SparseArrays
 
@@ -199,8 +199,7 @@ function complete(;A::DefaultMatrix   = nothing,
                    stoptol::Float64   = 1e-5,
                    use_autodiff::Bool = false,
                    gd_iter::Int64     = 50,
-                   debug_mode::Bool   = false,
-                   interactive_plot   = false)
+                   debug_mode::Bool   = false)
     if isnothing(A)
         error("please provide data matrix");
     end
@@ -252,7 +251,7 @@ function complete(;A::DefaultMatrix   = nothing,
                                                   ρ    = σ,
                                                   iter = gd_iter,
                                                   γ    = 0.2);
-            elsepp
+            else
                 # binaryPartUpdate   = train_logistic(rand(binaryCnt,1),A[index_tracker.Bernoulli],C12ObsBinary,σ;iter=gd_iter,γ=0.2);
                 # binaryPartUpdate   = train_logistic(warm_up_bernoulli,A[index_tracker.Bernoulli],C12ObsBinary,σ;iter=gd_iter,γ=0.2);
                 binaryPartUpdate   = train(Loss{Binomial}(),

@@ -1,0 +1,38 @@
+module ExponentialFamily
+
+import Distributions
+import Utilities.Indexing
+
+
+
+abstract type ExponentialFamily                              end
+struct AbstractBinomial         <: ExponentialFamily         end
+struct AbstractGaussian         <: ExponentialFamily         end
+struct AbstractPoisson          <: ExponentialFamily         end
+struct AbstractGamma            <: ExponentialFamily         end
+struct AbstractExponential      <: AbstractGamma             end
+struct AbstractNegativeBinomial <: ExponentialFamily         end
+struct AbstractGeometric        <: AbstractNegativeBinomial  end
+
+
+
+function convert_to_flag(from::ExponentialFamily)
+    if isa(from,AbstractBinomial)
+        return Indexing.DIST_FLAGS:Binomial
+    end
+    if isa(from,AbstractGamma)
+        return 
+    end
+    if isa(from,AbstractNegativeBinomial)
+    end
+    if isa(from,AbstractGaussian)
+    end
+    if isa(from,AbstractBinomial)
+    end
+end
+
+
+
+end
+
+
