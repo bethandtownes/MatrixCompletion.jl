@@ -3,7 +3,9 @@ Manifest.toml
 .vscode
 src/*.jl~
 src/*.ipynb
-src/.ipynb_checkpoints
 test/*.jl~
+
+
+**/.ipynb_checkpoints
 
 
