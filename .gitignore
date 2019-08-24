@@ -1,11 +1,9 @@
 .DS_Store
 Manifest.toml
 .vscode
-src/*.jl~
-src/*.ipynb
-test/*.jl~
-
-
+*.jl~
+*.ipynb
 **/.ipynb_checkpoints
-
+.projectile
+.projectile~
 
