@@ -1,130 +1,147 @@
 using Test,Printf,LinearAlgebra
-import Random,Distributions
-import MatrixCompletion.Losses
-import MatrixCompletion.Losses:train,SGD,train_logistic
-import MatrixCompletion.Convex.ADMM:complete
-import MatrixCompletion.Utilities.RandomMatrices:rand
-import MatrixCompletion.Utilities.Sampling:sample,BernoulliModel
-import MatrixCompletion.Utilities.Indexing:construct_index_tracker,construct_type_matrix
-import MatrixCompletion.Utilities.Indexing:Bernoulli,Gaussian,Poisson,Gamma,NegativeBinomial,Missing,DIST_FLAGS
-import MatrixCompletion.Convex.ADMM:MatrixCompletionModel,
-       predict,
-       _get_column_distribution_type,
-       _get_complete_type_matrix,
-       _predict_bernoulli,
-       _predict_poisson,
-       _predict_gamma,
-       _predict_negative_binomial,
-       _predict_gaussian
+
+
+
+# import Random,Distributions
+# import MatrixCompletion.Losses
+# import MatrixCompletion.Losses:train,SGD,train_logistic
+# import MatrixCompletion.Convex.ADMM:complete
+# import MatrixCompletion.Utilities.RandomMatrices:rand
+# import MatrixCompletion.Utilities.Sampling:sample,BernoulliModel
+# import MatrixCompletion.Utilities.Indexing:construct_index_tracker,construct_type_matrix
+# import MatrixCompletion.Utilities.Indexing:Bernoulli,Gaussian,Poisson,Gamma,NegativeBinomial,Missing,DIST_FLAGS
+# import MatrixCompletion.Convex.ADMM:MatrixCompletionModel,
+#        predict,
+#        _get_column_distribution_type,
+#        _get_complete_type_matrix,
+#        _predict_bernoulli,
+#        _predict_poisson,
+#        _predict_gamma,
+#        _predict_negative_binomial,
+# _predict_gaussian
+
+
+
 
 # using MatrixCompletion.Utilities
 
-function test_train_logistic(;size = 1000,ρ = 0.1,γ = 0.2,maxIter = 20)
+# function test_train_logistic(;size = 1000,ρ = 0.1,γ = 0.2,maxIter = 20)
 
-    y = Int.(Random.bitrand(size));
-    mle_x = train(Losses.Logistic(), Random.rand(size), y, zeros(size), ρ, iter = maxIter, γ = γ);
-    @test sum((Int.(sign.(mle_x)) .+ 1) / 2 .== y)
-    size > 0.99
-end
+#     y = Int.(Random.bitrand(size));
+#     mle_x = train(Losses.Logistic(), Random.rand(size), y, zeros(size), ρ, iter = maxIter, γ = γ);
+#     @test sum((Int.(sign.(mle_x)) .+ 1) / 2 .== y)
+#     size > 0.99
+# end
 
-test_train_logistic()
+# test_train_logistic()           # 
 
-function test_train_logistic_optimized(;size = 1000,ρ = 0.1,γ = 0.2,maxIter = 20)
-    y = Int.(Random.bitrand(size));
-    mle_x = train_logistic(Random.rand(size), y, zeros(size), ρ, iter = maxIter, γ = γ);
-    @test sum((Int.(sign.(mle_x)) .+ 1) / 2 .== y) / size > 0.99
-end
-
-
-function test_train_logistic_sgd(size = 3000 * 9000, ρ = 0.1, γ = 0.2, ep = 0)
-    y = Int.(Random.bitrand(size));
-    mle_x = train(SGD(), Losses.Logistic(), Random.rand(size), y, zeros(size), ρ, epoch = ep, γ = γ, num_of_batch = 20);
-    print(sum((Int.(sign.(mle_x)) .+ 1) / 2 .== y) / size);
-    @test sum((Int.(sign.(mle_x)) .+ 1) / 2 .== y) / size > 0.99
-end
+# function test_train_logistic_optimized(;size = 1000,ρ = 0.1,γ = 0.2,maxIter = 20)
+#     y = Int.(Random.bitrand(size));
+#     mle_x = train_logistic(Random.rand(size), y, zeros(size), ρ, iter = maxIter, γ = γ);
+#     @test sum((Int.(sign.(mle_x)) .+ 1) / 2 .== y) / size > 0.99
+# end
 
 
-function unit_test_train_poisson(;sz = 500,ρ = 0,step_size = 0.1,maxIter = 100)
-    # sz = 1000
-    # max_iter = 200
-    # γ = 0.1
-    # ρ = 0
-    y = Random.rand(Distributions.Poisson(10), sz) * 1.0
-    mle_x = train(Losses.Poisson(), Random.rand(sz), y, zeros(sz), ρ, iter = max_iter, γ = step_size);
-    recoveredX = round.(exp.(mle_x));
-    errRate = sum(abs.(recoveredX .- y) .> 1) / sz;
-#    @test 1 - errRate >= 0.99
-    return 1- errRate;
-end
+# function test_train_logistic_sgd(size = 3000 * 9000, ρ = 0.1, γ = 0.2, ep = 0)
+#     y = Int.(Random.bitrand(size));
+#     mle_x = train(SGD(), Losses.Logistic(), Random.rand(size), y, zeros(size), ρ, epoch = ep, γ = γ, num_of_batch = 20);
+#     print(sum((Int.(sign.(mle_x)) .+ 1) / 2 .== y) / size);
+#     @test sum((Int.(sign.(mle_x)) .+ 1) / 2 .== y) / size > 0.99
+# end
 
 
-
-function POISSON_SMALL_TEST_SET_LOOSE()
-    @test unit_test_train_poisson(sz=1000,ρ=0,step_size=0.1,maxIter=200) > 0.9
-    @test unit_test_train_poisson(sz=3000,ρ=0,step_size=0.1,maxIter=200) > 0.9
-    @test unit_test_train_poisson(sz=5000,ρ=0,step_size=0.1,maxIter=200) > 0.9
-    @test unit_test_train_poisson(sz=1000,ρ=0.1,step_size=0.1,maxIter=200) > 0.9
-    @test unit_test_train_poisson(sz=3000,ρ=0.1,step_size=0.1,maxIter=200) > 0.9
-    @test unit_test_train_poisson(sz=5000,ρ=0.1,step_size=0.1,maxIter=200) > 0.9
-end
-
-
-
-function test_train_gamma(;size = 500,ρ = 0.05,γ = 0.1,maxIter = 100)
-end
+# function unit_test_train_poisson(;sz = 500,ρ = 0,step_size = 0.1,maxIter = 100)
+#     # sz = 1000
+#     # max_iter = 200
+#     # γ = 0.1
+#     # ρ = 0
+#     y = Random.rand(Distributions.Poisson(10), sz) * 1.0
+#     mle_x = train(Losses.Poisson(), Random.rand(sz), y, zeros(sz), ρ, iter = max_iter, γ = step_size);
+#     recoveredX = round.(exp.(mle_x));
+#     errRate = sum(abs.(recoveredX .- y) .> 1) / sz;
+# #    @test 1 - errRate >= 0.99
+#     return 1- errRate;
+# end
 
 
+# function POISSON_SMALL_TEST_SET_LOOSE()
+#     @test unit_test_train_poisson(sz=1000,ρ=0,step_size=0.1,maxIter=200) > 0.9
+#     @test unit_test_train_poisson(sz=3000,ρ=0,step_size=0.1,maxIter=200) > 0.9
+#     @test unit_test_train_poisson(sz=5000,ρ=0,step_size=0.1,maxIter=200) > 0.9
+#     @test unit_test_train_poisson(sz=1000,ρ=0.1,step_size=0.1,maxIter=200) > 0.9
+#     @test unit_test_train_poisson(sz=3000,ρ=0.1,step_size=0.1,maxIter=200) > 0.9
+#     @test unit_test_train_poisson(sz=5000,ρ=0.1,step_size=0.1,maxIter=200) > 0.9
+# end
 
 
-function test_train_negative_binomial(;size = 500,ρ = 0.05,γ = 0.1,maxIter = 100)
-end
+# function test_train_gamma(;size = 500,ρ = 0.05,γ = 0.1,maxIter = 100)
+# end
+
+
+# function test_train_negative_binomial(;size = 500,ρ = 0.05,γ = 0.1,maxIter = 100)
+# end
 
 
 
-function test_complete_type_matrix()
-    test1_input = Array{Union{Missing,DIST_FLAGS},2}(undef, 10, 10)
-    test1_input[:,1:2] .= Ref(Gaussian);
-    test1_input[:,3:4] .= Ref(Bernoulli);
-    test1_input[:,5:6] .= Ref(Gamma);
-    test1_input[:,7:8] .= Ref(Poisson);
-    test1_input[:,9:10] .= Ref(NegativeBinomial);
-    test1_expect = deepcopy(test1_input);
-    test1_input[diagind(test1_input)] .= missing;
-    test1_output = _get_complete_type_matrix(test1_input);
-    @test test1_output == test1_expect;
-    test2_input = Array{DIST_FLAGS,2}(undef, 10, 10)
-    test2_input[:,1:2] .= Ref(Gaussian);
-    test2_input[:,3:4] .= Ref(Bernoulli);
-    test2_input[:,5:6] .= Ref(Gamma);
-    test2_input[:,7:8] .= Ref(Poisson);
-    test2_input[:,9:10] .= Ref(NegativeBinomial);
-    test2_expect = deepcopy(test2_input);
-    test2_output = _get_complete_type_matrix(test2_input);
-    @test test2_output == test2_expect;
-end
+# function test_complete_type_matrix()
+#     test1_input = Array{Union{Missing,DIST_FLAGS},2}(undef, 10, 10)
+#     test1_input[:,1:2] .= Ref(Gaussian);
+#     test1_input[:,3:4] .= Ref(Bernoulli);
+#     test1_input[:,5:6] .= Ref(Gamma);
+#     test1_input[:,7:8] .= Ref(Poisson);
+#     test1_input[:,9:10] .= Ref(NegativeBinomial);
+#     test1_expect = deepcopy(test1_input);
+#     test1_input[diagind(test1_input)] .= missing;
+#     test1_output = _get_complete_type_matrix(test1_input);
+#     @test test1_output == test1_expect;
+#     test2_input = Array{DIST_FLAGS,2}(undef, 10, 10)
+#     test2_input[:,1:2] .= Ref(Gaussian);
+#     test2_input[:,3:4] .= Ref(Bernoulli);
+#     test2_input[:,5:6] .= Ref(Gamma);
+#     test2_input[:,7:8] .= Ref(Poisson);
+#     test2_input[:,9:10] .= Ref(NegativeBinomial);
+#     test2_expect = deepcopy(test2_input);
+#     test2_output = _get_complete_type_matrix(test2_input);
+#     @test test2_output == test2_expect;
+# end
 
 
 
-function test_predict_bernoulli()
-    size = 500;ρ = 0.1;γ = 0.1;maxIter = 500;
-    y = Int.(Random.bitrand(size));
-    mle_x = train(Losses.Logistic(), Random.rand(size), y, zeros(size), ρ, iter = maxIter, γ = γ);
-    @test sum(_predict_bernoulli(mle_x) .== y) / size > 0.99
-end
+# function test_predict_bernoulli()
+#     size = 500;ρ = 0.1;γ = 0.1;maxIter = 500;
+#     y = Int.(Random.bitrand(size));
+#     mle_x = train(Losses.Logistic(), Random.rand(size), y, zeros(size), ρ, iter = maxIter, γ = γ);
+#     @test sum(_predict_bernoulli(mle_x) .== y) / size > 0.99
+# end
 
 
 
 # test_predict_bernoulli()
 
 
-function test_predict()
-
-end
+using MatrixCompletion
 
 
 
 
 
+function unit_test_admm(;input_matrix,                  = rand(Distributions.Gaussian(0,1),500,500,3),
+                        distribution_type_matrix        = provide()
+                        sampling_model                  = BernoulliModel(),
+                        sampling_rate                   = 0.8,
+                        max_iter_inner_gradient_descent = 3,
+                        max_iter_admm                   = 200,
+                        stop_tol_admm                   = 1e-5,
+                        debug_mode                      = false, 
+                        use_auto_diff                   = true,
+                        λ                               = 5e-1,      
+                        μ                               = 5e-4,
+                        σ                               = 0.3,
+                        τ                               = 1.618)
+    
+end                         
+                        
+                        
 
 
 function accuracyImputedBinaryPart(;truth::Array{Float64,2} = nothing, completedMatrix::Array{Float64,2} = nothing)
@@ -147,12 +164,8 @@ end
 
 
 
-
-
-
-
 function test_admm_with_autodiff_smallinput(;gd_iter = 3,dbg = false)
-    admm_test_matrix1 = rand([(Distributions.Bernoulli(0.7), 100 => 50, 3),(Distributions.Gaussian(3, 1), 100 => 50, 3)])
+    1admm_test_matrix1 = rand([(Distributions.Bernoulli(0.7), 100 => 50, 3),(Distributions.Gaussian(3, 1), 100 => 50, 3)])
     admm_test_matrix_missing1 = sample(BernoulliModel(), x = admm_test_matrix1, rate = 0.8)
     @time admm_test_matrix_output_1 = complete(A = admm_test_matrix_missing1, maxiter = 200, use_autodiff = true, gd_iter = gd_iter, debug_mode = dbg);
     gaussian_acc = accuracyImputedContinuousPart(truth = admm_test_matrix1, completedMatrix = admm_test_matrix_output_1)
@@ -216,3 +229,5 @@ end
 # test_train_logistic()
 # test_train_poisson()
 # test_complete_type_matrix()
+
+
