@@ -1,161 +1,127 @@
-export relative_error,
-       total_error
-
-
 using MatrixCompletion.Concepts
-using LinearAlgebra 
-
-
-struct ErrorMatrix{T<:ExponentialFamily} end
+import LinearAlgebra 
 
 
 
 
+# struct ErrorMatrix{T<:ExponentialFamily} end
 
 
-function provide(object::ErrorMetric{LpSpace})
-    metric = nothing
-    if p > 0 
-        metric = (x,slack) -> norm(x,object.p)
-    end
-    metric = (x,slack) -> sum(Int.(abs.(x) .> slack))
-    return metric;
-end
+struct RelativeError end
+struct AbsoluteError end
 
-
-
-
-
-
-
-
-function relative_error(metric::T,input,referece) where T
-    metric = provide(ErrorMetric{T}())
-    return metric(input - reference) / metric(reference)
-end
-
-
-
-
-function total_error(metric::T,input,reference) where T
-    metric = provide(ErrorMetric{T}())
-    return metric(input-reference)
-end
-
-
-
-
-
-
-
-# function relative_error(metric::T,input::Array{Float64,N},reference::Array{Float64,N})
+# function provide(object::ErrorMetric)
     
-
-# end
-
-
-
-# function relative_error(metric::L2Distance,input::Array{Float64,N} = nothing, reference::Array{Float64,1}=nothing)
-#    return norm(input .- reference,2)/norm(reference,2)
-# end
-
-
-
-# function relative_error(metric::L0Distance,input::Array{Float64,N}=nothing,reference::Array{Float64,1}=nothing,slack::Float64=1e-5)
-#     return sum(Int.(input - reference .> slack)) / length(reference)
-# end
-
-
-
-# function relative_error(metric::L1Distance,input::Array{Float64,N}=nothing,reference::Array{Float64,1}=nothing)
-#    return norm(input .- reference,1)/norm(reference,1)
 # end
 
 
 
 
+function within_radius(x;of=1e-5,at=0)
+    # @show x
+    # @show Int.(abs.(x .- at) .> of)
+    # @show sum(Int.(abs.(x .- at) .> of))
+    return sum(Int.(abs.(x .- at) .> of))
+end
 
-# function total_error(metric::L2Distance,input::Array{Float64,N} = nothing, reference::Array{Float64,1} = nothing)
-#     return norm(input .- reference,2)
+
+function Concepts.provide(object::RelativeError,x,y;
+                          metric::Any = x -> LinearAlgebra.norm(x,2),
+                          base_metric::Any=metric)
+    return metric(x-y)/base_metric(y)
+end
+
+
+
+
+function Concepts.provide(object::AbsoluteError,x,y;
+                          metric::Any= x-> LinearAlgebra.norm(x,2))
+    return metric(x - y)
+end
+
+
+
+
+
+# function Concepts.provide(a::I)
+#     print("hello")
+#     end
+
+
+
+function Concepts.provide(object::Diagnostics{Int64})
+   return "int64"
+end
+
+# function Concepts.provide(object::Diagnostics{AbstractGamma})
+#     return "abstractgamma"
 # end
 
 
 
 
-
-
-# function total_error(metric::L0Distance,input::Array{Float64,N} =nothing,reference::Array{Float64,1}=nothing)
-#     return sum(Int.(input == reference))
-# end
-
-
-
-function Concepts.provide(a::Int64)
-    print("hello")
+function Concepts.provide(object::Diagnostics{<:Any};
+                          reference::Optional{VecOrMatOfReals}=nothing,
+                          input_data::Optional{VecOrMatOfReals}=nothing) 
+    if isnothing(input_data) && isnothing(reference)  
+        throw(DomainError("[provide(Diagnostics)]: input_data and/or reference variable missing))"))
     end
-
-
-# function Concepts.provide(object::Diagnostics{AbstractGamma};
-#                  input_data::Array{Float64,1} = nothing,
-#                  reference::Array{Float64,1}   = nothing)
+    return Dict("relative-error[#within-radius(1e-5)]" => Concepts.provide(RelativeError(),    
+                                                                  input_data,reference,
+                                                                  metric      = x -> within_radius(x),
+                                                                  base_metric = x -> LinearAlgebra.norm(abs.(x) .+ 1 ,0)),
+                "absolute-error[#within-radius(1e-5)]" => Concepts.provide(AbsoluteError(),
+                                                                  input_data, reference,
+                                                                  metric      = x -> within_radius(x)),
+                "relative-error[L1]" => Concepts.provide(RelativeError(),
+                                                         input_data,reference,
+                                                         metric = x -> LinearAlgebra.norm(x,1)),
+                "absolute-error[L1]" => Concepts.provide(AbsoluteError(),
+                                                         input_data, reference,
+                                                         metric = x -> LinearAlgebra.norm(x,1)),
+                "relative-error[L2]" => Concepts.provide(RelativeError(),
+                                                         input_data,reference,
+                                                         metric = x -> LinearAlgebra.norm(x,2)),
+                "absolute-error[L2]" => Concepts.provide(AbsoluteError(),
+                                                         input_data,reference,
+                                                         metric = x -> LinearAlgebra.norm(x,2)),
+                "error-matrix"       => Concepts.abs.(input_data .- reference)
+                )
     
-
-#    print("gamma")
-# end
+end
 
 
 
 
-
-# function Concepts.provide(object::Diagnostics{AbstractGamma};
-#                  input_data::Array{Float64,N} = nothing,
-#                  reference ::Array{Float64,N} = nothing)
-#     return Dict("relative-error(L2 Distance)" => relative_error(L2Distance(),input_data,reference),
-#                 "error-matrix"                => (input_data - reference),
-#                 "total-error(L2 Distance)"    => total_error(L2Distance(),input_data, reference))
-# end
-
-
-
-
-# function Concepts.provide(object::Diagnostics{AbstractGaussian};
-#                  input_data::Array{Float64,N} = nothing,
-#                  reference ::Array{Float64,N} = nothing)
-#     return Dict("relative-error(L2 Distance)" => relative_error(L2Distance(),input_data,reference),
-#                 "error-matrix"                => (input_data - reference),
-#                 "total-error(L2 Distance)"    => total_error(L2Distance,input_data, reference))
-# end
-
-
-# function Concepts.provide(object::Diagnostics{AbstractBinomial};
-#                  input_data::Array{Float64,N} = nothing,
-#                  reference::Array{Float64,N}  = nothing)
-#     return Dict("relative-error(L0 Distance)" => relative_error(L0Distance(),input_data,reference),
-#                 "error-matrix"                => (input_data-reference),
-#                 "total_error(L0 Distance)"    => total_error(L0Distance(),input_data,reference))
-# end
-
-
-
-# function Concepts.provide(object::Diagnostics{AbstractPoisson};
-#                  input_data::Array{Float64,N} = nothing,
-#                  reference::Array{Float64,N}  = nothing)
-#     return Dict("relative-error(L0 Distance)"          => relative_error(L0Distance(),input_data,reference),
-#                 "relative-error(L0 Distance,slack =1)" => relative_error(L0Distance(),input_data,reference),
-#                 "relative-error(L0 Distance,slack =2)" => relative_error(L0Distance(),input_data,reference),
-#                 "error-matrix"                         => input_data-reference,
-#                 "total_error(L0 Distance)"             => total_error(L0Distance(),input_data,reference))
-# end
-
-
-# function Concepts.provide(object::Diagnostics{AbstractNegativeBinomial};
-#                  input_data::Array{Float64,N} = nothing,
-#                  reference::Array{Float64,N}  = nothing)
-#     return Dict("relative-error(L0 Distance)"         => relative_error(L0Distance(),input_data,reference),
-#                 "relative-error(L0 Distance,slack=1)" => relative_error(L0Distance(),input_data,reference),
-#                 "relative-error(L0 Distance,slack=2)" => relative_error(L0Distance(),input_data,reference),
-#                 "error-matrix"                        => (input_data-reference),
-#                 "total_error(L0 Distance)"            => total_error(L0Distance,input_data,reference))
+# function Concepts.provide(object::Diagnostics{<:Any};
+#                           input_data = nothing,
+#                           reference  = nothing)
+#     if isnothing(input_data) && isnothing(reference)
+#         throw(BoundsError())
+#     end
+    # return Dict("relative-error[#within-radius(1e-5)]" => provide(RelativeError(),
+    #                                                               input_data,refenrence;
+    #                                                               metric      = x -> within_radius(x),
+    #                                                               base_metric = x -> LinearAlgebra.norm(x,0)),
+    #             "absolute-error(#within-radius(1e-5))" => provide(AbsoluteError(),
+    #                                                               input_data, reference;
+    #                                                               metric      = x -> within_radius(x),
+    #                                                               base_metric = x -> LinearAlgebra.norm(x,0)),
+    #             "relative-error[L1]" => provide(RelativeError(),
+    #                                             input_data,reference;
+    #                                             metric = x -> LinearAlgebra.norm(x,1)),
+    #             "absolute-error[L1]" => provide(AbsoluteError(),
+    #                                             input_data, reference;
+    #                                             metric = x -> LinearAlgebra.norm(x,1)),
+    #             "relative-error[L2]" => provide(RelativeError(),
+    #                                             input_data,reference;
+    #                                             metric = x -> LinearAlbebra.norm(x,2)),
+    #             "absolute-error[L2]" => provide(AbsoluteError(),
+    #                                             input_data,reference;
+    #                                             metric = x -> LinearAlgebra.norm(x,2)),
+    #             "error-matrix"       => abs.(input_data .- reference)
+    #             )
+    
 # end
 
 

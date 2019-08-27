@@ -1,5 +1,8 @@
 using Test,Printf,LinearAlgebra
 
+import Distributions
+using MatrixCompletion
+
 
 
 # import Random,Distributions
@@ -35,7 +38,7 @@ using Test,Printf,LinearAlgebra
 
 # test_train_logistic()           # 
 
-# function test_train_logistic_optimized(;size = 1000,ρ = 0.1,γ = 0.2,maxIter = 20)
+# function test_train_logistic_optimized(f;size = 1000,ρ = 0.1,γ = 0.2,maxIter = 20)
 #     y = Int.(Random.bitrand(size));
 #     mle_x = train_logistic(Random.rand(size), y, zeros(size), ρ, iter = maxIter, γ = γ);
 #     @test sum((Int.(sign.(mle_x)) .+ 1) / 2 .== y) / size > 0.99
@@ -125,21 +128,21 @@ using MatrixCompletion
 
 
 
-function unit_test_admm(;input_matrix,                  = rand(Distributions.Gaussian(0,1),500,500,3),
-                        distribution_type_matrix        = provide()
-                        sampling_model                  = BernoulliModel(),
-                        sampling_rate                   = 0.8,
-                        max_iter_inner_gradient_descent = 3,
-                        max_iter_admm                   = 200,
-                        stop_tol_admm                   = 1e-5,
-                        debug_mode                      = false, 
-                        use_auto_diff                   = true,
-                        λ                               = 5e-1,      
-                        μ                               = 5e-4,
-                        σ                               = 0.3,
-                        τ                               = 1.618)
+# function unit_test_admm(;input_matrix,                  = rand(Distributions.Gaussian(0,1),500,500,3),
+#                         distribution_type_matrix        = provide()
+#                         sampling_model                  = BernoulliModel(),
+#                         sampling_rate                   = 0.8,
+#                         max_iter_inner_gradient_descent = 3,
+#                         max_iter_admm                   = 200,
+#                         stop_tol_admm                   = 1e-5,
+#                         debug_mode                      = false, 
+#                         use_auto_diff                   = true,
+#                         λ                               = 5e-1,      
+#                         μ                               = 5e-4,
+#                         σ                               = 0.3,
+#                         τ                               = 1.618)
     
-end                         
+# end                         
                         
                         
 
@@ -165,7 +168,7 @@ end
 
 
 function test_admm_with_autodiff_smallinput(;gd_iter = 3,dbg = false)
-    1admm_test_matrix1 = rand([(Distributions.Bernoulli(0.7), 100 => 50, 3),(Distributions.Gaussian(3, 1), 100 => 50, 3)])
+    admm_test_matrix1 = rand([(Distributions.Bernoulli(0.7), 100 => 50, 3),(Distributions.Gaussian(3, 1), 100 => 50, 3)])
     admm_test_matrix_missing1 = sample(BernoulliModel(), x = admm_test_matrix1, rate = 0.8)
     @time admm_test_matrix_output_1 = complete(A = admm_test_matrix_missing1, maxiter = 200, use_autodiff = true, gd_iter = gd_iter, debug_mode = dbg);
     gaussian_acc = accuracyImputedContinuousPart(truth = admm_test_matrix1, completedMatrix = admm_test_matrix_output_1)

@@ -45,6 +45,7 @@ struct SGD end
 #struct Loss{T} end 
 
 
+
 #export Loss,ExponentialFamily,
  #   AbstractBinomial,AbstractGaussian,AbstractPoisson,AbstractGamma,AbstractNegativeBinomial,AbstractGeometric
 export evaluate,grad,train

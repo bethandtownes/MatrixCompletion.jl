@@ -1,8 +1,9 @@
-modulpne ADMM
+module ADMM
 
 using Printf
 using LinearAlgebra
 using SparseArrays
+
 
 # import MatrixCompletion.Losses:train,train_logistic
 # import MatrixCompletion.Losses
@@ -340,16 +341,3 @@ end
 
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-

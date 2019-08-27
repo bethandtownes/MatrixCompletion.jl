@@ -1,7 +1,5 @@
 module Indexing
-
-
-
+using MatrixCompletion.Concepts 
 
 
 
@@ -27,7 +25,7 @@ const DefaultNumberType = Union{Array{Float64,1},
 #import ...ExponentialFamily 
 
 #using ...ExponentialFamily
-using MatrixCompletion.Concepts 
+
 
 
 
@@ -107,60 +105,60 @@ end
 
 
 
-function provide(object::IndexTracker;input_matrix::Array{Union{DIST_FLAGS,Missing},2})
-        tracker = IndexTracker()
-        tracker.Missing = findall(x -> ismissing(x), input_type_matrix);
-        tracker.Gaussian = findall(x -> !ismissing(x) && x == Gaussian, input_type_matrix);
-        tracker.Bernoulli = findall(x -> !ismissing(x) && x == Bernoulli, input_type_matrix);
-        tracker.Poisson = findall(x -> !ismissing(x) && x == Poisson, input_type_matrix);
-        tracker.Gamma = findall(x -> !ismissing(x) && x == Gamma, input_type_matrix);
-        tracker.NegativeBinomial = findall(x -> !ismissing(x) && x == NegativeBinomial, input_type_matrix);
-        tracker.Observed = findall(x-> !ismissing(x),input_type_matrix);
-     return tracker;
-end
+# function provide(object::IndexTracker;input_matrix::Array{Union{DIST_FLAGS,Missing},2})
+#         tracker = IndexTracker()
+#         tracker.Missing = findall(x -> ismissing(x), input_type_matrix);
+#         tracker.Gaussian = findall(x -> !ismissing(x) && x == Gaussian, input_type_matrix);
+#         tracker.Bernoulli = findall(x -> !ismissing(x) && x == Bernoulli, input_type_matrix);
+#         tracker.Poisson = findall(x -> !ismissing(x) && x == Poisson, input_type_matrix);
+#         tracker.Gamma = findall(x -> !ismissing(x) && x == Gamma, input_type_matrix);
+#         tracker.NegativeBinomial = findall(x -> !ismissing(x) && x == NegativeBinomial, input_type_matrix);
+#         tracker.Observed = findall(x-> !ismissing(x),input_type_matrix);
+#      return tracker;
+# end
 
 
 
 
 
-function provide(object::DistInfoTracker; input_matrix::Array{T,2}) where T<:Union{S,Missing} where S<:Real
-    n,m = size(input_matrix);
-    typemat = Array{Union{DIST_FLAGS,Missing}}(undef,m,n);
-    for col in 1:m
-        if _check_poisson(input_matrix[:,col])
-            typemat[:,col] .= Ref(Poisson);
-        elseif _check_bernoulli(input_matrix[:,col])
-            typemat[:,col] .= Ref(Bernoulli);
-        elseif _check_gaussian(input_matrix[:,col])
-            typemat[:,col] .= Ref(Gaussian);
-        elseif _check_gamma(input_matrix[:,col])
-            typemat[:,col] .= Ref(Gamma);
-        elseif _check_negativebinomial(input_matrix[:,col])
-            typemat[:,col] .= Ref(NegativeBinomial);
-        end
-    end
-    for missing_idx in findall(x->ismissing(x),input_matrix)
-        typemat[missing_idx] = missing;
-    end
-    return typemat;
-end
+# function provide(object::DistInfoTracker; input_matrix::Array{T,2}) where T<:Union{S,Missing} where S<:Real
+#     n,m = size(input_matrix);
+#     typemat = Array{Union{DIST_FLAGS,Missing}}(undef,m,n);
+#     for col in 1:m
+#         if _check_poisson(input_matrix[:,col])
+#             typemat[:,col] .= Ref(Poisson);
+#         elseif _check_bernoulli(input_matrix[:,col])
+#             typemat[:,col] .= Ref(Bernoulli);
+#         elseif _check_gaussian(input_matrix[:,col])
+#             typemat[:,col] .= Ref(Gaussian);
+#         elseif _check_gamma(input_matrix[:,col])
+#             typemat[:,col] .= Ref(Gamma);
+#         elseif _check_negativebinomial(input_matrix[:,col])
+#             typemat[:,col] .= Ref(NegativeBinomial);
+#         end
+#     end
+#     for missing_idx in findall(x->ismissing(x),input_matrix)
+#         typemat[missing_idx] = missing;
+#     end
+#     return typemat;
+# end
                  
 
-function assign!(object::DistInfoTracker;input_dist_info_matrix::Array{Union{DIST_FLAGS,Missing}},
-                 new_type::Array{Pair{UnitRange{Int64},ExponentialFamily}})
-    for (idx,the_type) in new_type
-        input_dist_info_matrix[idx] = convert(the_type)
-  end
-end
+# function assign!(object::DistInfoTracker;input_dist_info_matrix::Array{Union{DIST_FLAGS,Missing}},
+#                  new_type::Array{Pair{UnitRange{Int64},ExponentialFamily}})
+#     for (idx,the_type) in new_type
+#         input_dist_info_matrix[idx] = convert(the_type)
+#   end
+# end
 
-function assign(object::DistInfoTracker;input_dist_info_matrix::Array{Union{DIST_FLAGS,Missing}},
-                new_type::Array{Pair{UnitRange{Int64},ExponentialFamily}})
-    copyof_input_dist_info_matrix = deepcopy(input_dist_info_matrix)
-    for (idx,the_type) in new_type
-        copyof_input_dist_info_matrix[idx] = convert(the_type)
-    end
-    return copyof_input_dist_info_matrix
-end
+# function assign(object::DistInfoTracker;input_dist_info_matrix::Array{Union{DIST_FLAGS,Missing}},
+#                 new_type::Array{Pair{UnitRange{Int64},ExponentialFamily}})
+#     copyof_input_dist_info_matrix = deepcopy(input_dist_info_matrix)
+#     for (idx,the_type) in new_type
+#         copyof_input_dist_info_matrix[idx] = convert(the_type)
+#     end
+#     return copyof_input_dist_info_matrix
+# end
 
 
 

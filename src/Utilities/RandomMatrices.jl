@@ -31,12 +31,11 @@ end
 """
 Helper function to ensure the input of mixed_dists is valid
 """
-function _ensure_feasible(mixed_dists::Vector{Tuple{T,Pair{I,I},I}}) where {T<:UnivariateDistributions,I<:Integer}
+function _eensure_feasible(mixed_dists::Vector{Tuple{T,Pair{I,I},I}}) where {T<:UnivariateDistributions,I<:Integer}
     if length(mixed_dists) <= 0
         throw(DomainError("The dimension of the mixed distributions should be >= 1."))
     end
 end
-
 
 
 
@@ -52,11 +51,9 @@ function rand(dist::T,row::I,col::I;target_rank::I) where {T<:UnivariateDistribu
     base_matrix = Random.rand(dist,row,target_rank)
     redundant_matrix = base_matrix[:,StatsBase.sample(1:target_rank,col-target_rank)];
     return hcat(base_matrix,redundant_matrix) * 1.0;
-    # for remaining = 1:col-target_rank
-    #     base_matrix = hcat(base_matrix,base_matrix[:,StatsBase.sample(1:target_rank)])
-    # end
-    # return base_matrix * 1.0;
+
 end
+
 
 
 
@@ -73,6 +70,9 @@ function rand(mixed_dists::Vector{Tuple{T,Pair{I,I},I}}) where {T<:UnivariateDis
     gen_mat = mapreduce(x -> rand(x[1],x[2].first,x[2].second;target_rank = x[3]),(x,y)->hcat(x,y),mixed_dists);
     return gen_mat;
 end
+
+
+
 
 
 end
