@@ -2,8 +2,7 @@
     let
         tc1 = IndexTracker{Any}()
         @test typeof(tc1) == IndexTracker{Any}
-        @test_throws DomainError() tc2 = IndexTracker{Symbol}([:a,:b],[:a,:b])
-         
+        @test_throws DomainError tc2 = IndexTracker{Symbol}([:a,:b],[:a,:b])
     end
 end
 
