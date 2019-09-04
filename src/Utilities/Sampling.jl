@@ -76,8 +76,8 @@ struct Sampler{T<:AbstractSamplingModels}
 end
 
 
-const Sampler(model::BernoulliModel) = Sampler{BernoulliModel}(model::BernoulliModel)
-const Sampler(model::UniformModel)   = Sampler{UniformModel}(model::UniformModel)
+const Sampler(model::BernoulliModel) = Sampler{BernoulliModel}(model)
+const Sampler(model::UniformModel)   = Sampler{UniformModel}(model)
 
 
 
