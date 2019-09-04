@@ -2,6 +2,7 @@ module ModelFitting
 using ..Concepts
 using ..BetterMGF
 using ..Estimator
+import LinearAlgebra
 
 abstract type FittingMethod end
 
@@ -16,7 +17,7 @@ end
 @overload
 function Concepts.check(object::Union{Type{Val{:integral}},Categorical},
                         data::Array{T}) where T<:Real
-    dist_to_integra_cast = LinearAlgebra.norm(data .- round.(data),2)
+    dist_to_integral_cast = LinearAlgebra.norm(data .- round.(data),2)
     return dist_to_integral_cast <= 1e-2
 end
 

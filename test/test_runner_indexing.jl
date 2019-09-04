@@ -3,6 +3,15 @@
         tc1 = IndexTracker{Any}()
         @test typeof(tc1) == IndexTracker{Any}
         @test_throws DomainError tc2 = IndexTracker{Symbol}([:a,:b],[:a,:b])
+        @test_throws DimensionMismatch tc3 = IndexTracker{Symbol}([:a,:b],[:c])
+        tc4 = IndexTracker{Symbol}([:a :b;
+                                    :a :b],
+                                   [:c :d
+                                    :c :d])
+        @test tc4[:a] == [CartesianIndex(1,1),CartesianIndex(2,1)]
+        @test tc4[:b] == [CartesianIndex(1,2),CartesianIndex(2,2)]
+        @test tc4[:c] == [CartesianIndex(1,1),CartesianIndex(2,1)]
+        @test tc4[:d] == [CartesianIndex(1,2),CartesianIndex(2,2)]
     end
 end
 
