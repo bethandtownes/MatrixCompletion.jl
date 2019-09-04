@@ -8,6 +8,13 @@ function test_scope()
 end
 
 
+
+function test_hello()
+    print("hello")
+end
+
+
+
 function test_emacs()
     print("hello")
 end

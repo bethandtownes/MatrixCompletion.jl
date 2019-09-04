@@ -1,8 +1,16 @@
 module Losses
 
+#==============================================================================#
+#                          MODULE OPTIONS & FLAGS                              #
+#==============================================================================#
+const DEBUG_MODE   = true
+const VERBOSE_MODE = true
+#------------------------------------------------------------------------------#
+
+
+
 using Printf
 import Random, AutoGrad, Distributions
-
 using ..Concepts
 
 struct SGD end
@@ -31,38 +39,33 @@ struct SGD end
 # end
 
 
-# abstract type ExponentialFamily                             end
-# abstract type AbstractBinomial         <: ExponentialFamily end
-# abstract type AbstractGaussian         <: ExponentialFamily end
-# abstract type AbstractPoisson          <: ExponentialFamily end
-# abstract type AbstractGamma            <: ExponentialFamily end
-# abstract type AbstractExponential      <: AbstractGamma     end
-# abstract type AbstractNegativeBinomial <: ExponentialFamily end
-# abstract type AbstractGeometric        <: AbstractNegativeBinomial  end
+struct Loss{T} <: AbstractLoss where T<:Any
+    function Loss{T}() where T<:Any
+        @abstract_instance
+        return new{T}()
+    end
+    
+    #    function Loss{AbstractPoisson}(of::Union{AbstractPoisson,Type{Val{:Poisson}}})
+    function Loss{T}(of::T) where T<:ExponentialFamily
+        return new{T}()
+    end
+end
 
 
-
-#struct Loss{T} end 
-
-
-#export Loss,ExponentialFamily,
- #   AbstractBinomial,AbstractGaussian,AbstractPoisson,AbstractGamma,AbstractNegativeBinomial,AbstractGeometric
-export evaluate,grad,train
-
+# kind of hackish.. the second one just defined in the first.
+const Loss(of::Union{T,Symbol}) where T<:ExponentialFamily =
+    typeof(of) <: ExponentialFamily ? Loss{T}(of) : Loss(convert(ExponentialFamily, of))
 
 loss_logistic(x,y,c,ρ) = -sum(y .* log.(σ.(x)) .+ (1 .- y) .* log.(1 .- σ.(x))) .+  sum(ρ .* (x .- c).^2);
 
 
 
-################################################################################
-#                             Gaussian Loss                                    # 
-################################################################################
-
-function Concepts.provide(loss::Loss{AbstractGaussian})
+#==============================================================================#
+#                             Gaussian Loss                                    #
+#==============================================================================#
+function Concepts.provide(loss::Loss{AbstractGaussian})    
     #TODO
 end
-
-
 
 
 function evaluate(loss::Loss{AbstractGaussian},
@@ -75,48 +78,37 @@ function grad(loss::Loss{AbstractGaussian} ,
               x,y,c,ρ)
     #TODO
 end
-
-
-################################################################################
-#                            Binomial (Logistic) Loss                          # 
-################################################################################
-
-
-
-function Concepts.provide(loss::Loss{AbstractBinomial})
+#==============================================================================#
+#                         Bernoulli (Logistic) Loss                            #
+#==============================================================================#
+function Concepts.provide(loss::Loss{AbstractBernoulli})
      L(x,y,c,ρ) = -sum(y .* log.(σ.(x)) .+ (1 .- y) .* log.(1 .- σ.(x))) .+  sum(ρ .* (x .- c).^2);
     return L
 end
 
 
-
-function evaluate(loss::Loss{AbstractBinomial},
+function evaluate(loss::Loss{AbstractBernoulli},
                   x,y,c,ρ)
     return  -sum(y .* log.(σ.(x)) .+ (1 .- y) .* log.(1 .- σ.(x)))
           .+ sum(ρ .* (x .- c).^2);
 end
 
 
-function grad(loss::Loss{AbstractBinomial},
+function grad(loss::Loss{AbstractBernoulli},
               x,y,c,ρ)
     ex = exp.(x)
     inv_ex1 = 1 ./(ex .+ 1)
     return inv_ex1 .* (-y + (1 .-y) .* ex) .+ (2*ρ) .* (x .- c)
 end
 
-
-
-################################################################################
+#==============================================================================#
 #                             Poisson Loss                                     #
-################################################################################
-
-
-
+#==============================================================================#
+@overload
 function Concepts.provide(loss::Loss{AbstractPoisson})
-    L(x,y,c,ρ) = sum(exp.(x) .- y .* x) + sum(ρ .* (x .- c).^2)
-    return L;
+      L(x,y,c,ρ) = sum(exp.(x) .- y .* x) + sum(ρ .* (x .- c).^2)
+      return L;
 end
-
 
 
 function evaluate(loss::Loss{AbstractPoisson},
@@ -125,19 +117,15 @@ function evaluate(loss::Loss{AbstractPoisson},
 end
 
 
-
 function grad(loss::Loss{AbstractPoisson},
               x,y,c,ρ)
     #    return # sum(exp.(x) .- y)  .+ (2*ρ) .* (x .- c)
     return exp.(x) .- y .+ (2*ρ) .* (x .- c)
 end
 
-
-################################################################################
+#==============================================================================#
 #                              Gamma Loss                                      #
-################################################################################
-
-
+#==============================================================================#
 function Concepts.provide(loss::Loss{AbstractGamma})
     L(x,y,c,ρ) = sum(-x .* y .- log.(-x))+ sum(ρ .* (x .- c).^2)
    return L
@@ -149,13 +137,12 @@ function evaluate(loss::Loss{AbstractGamma},x,y,c,ρ)
 end
 
 
-
-
 ## Use the reciprocal link instead of the negative reciprocal link
 function grad(loss::Loss{AbstractGamma},x,y,c,ρ)
     return y .- (1 ./ x) .+ (2*ρ) .* (x .- c)
 end
-   
+
+
 
 
 
@@ -165,6 +152,29 @@ function grad_logistic(x,y,c,ρ)
     return inv_ex1 .* (-y + (1 .-y) .* ex) .+ (2*ρ) .* (x .- c);
     # return (-y .* inv_ex1 + (1 .- y) .* (ex .* inv_ex1)) .+ (2*ρ) .* (x.-c);
 end
+
+
+
+#==============================================================================#
+#                         Negative Binomial Loss                               #
+#==============================================================================#
+function Concepts.provide(loss::Loss{AbstractNegativeBinomial})
+    L(x,y,c,ρ) = sum(-x .* y .- log.(-x))+ sum(ρ .* (x .- c).^2)
+   return L
+end
+
+
+function evaluate(loss::Loss{AbstractNegativeBinomial},x,y,c,ρ)
+    return sum(x .* y .- log.(x))+ sum(ρ .* (x .- c).^2)
+end
+
+
+## Use the reciprocal link instead of the negative reciprocal link
+function grad(loss::Loss{AbstractNegativeBinomial},x,y,c,ρ)
+    return y .- (1 ./ x) .+ (2*ρ) .* (x .- c)
+end
+
+
 
 
 
@@ -185,6 +195,7 @@ end
 
 
 function train(loss;fx,y,c,ρ,γ=0.02,iter=20,verbose=false)
+    DEBUG_MODE && @info "Gradient Descent with Autograd"
     ∇ = AutoGrad.grad(loss);
     curFx = fx;
     for i = 1:iter
@@ -196,6 +207,7 @@ end
 
 function train(native_loss::Loss{T};
                fx,y,c,ρ,γ=0.02,iter=20,verbose=false) where T<:ExponentialFamily
+    DEBUG_MODE && @info "Gradient Descent with native differentitaion"
     curFx = fx;
     for i = 1:iter 
         curFx = curFx .- γ .* grad(native_loss,curFx,y,c,ρ);
@@ -226,4 +238,4 @@ end
 
 
 
-end
+end # end of Loss
