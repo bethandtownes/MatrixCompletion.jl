@@ -13,12 +13,6 @@ using MatrixCompletion
     @test isa(tc4, Array{MaybeMissing{Int64},1}) || isa(tc4,Array{Int64})
 end
 
-
-
-
-
-
-
 @testset "$(format("Sampling: UniformModel[VecOrMat]"))" begin
     #==================== Vector Case ====================#
     let

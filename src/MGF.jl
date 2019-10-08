@@ -120,9 +120,19 @@ end
 
 
 @overload
-function Concepts.evaluate(object::SampleMGF,t::VecOrMat{T};data::VecOrMatOf{Real},order::Integer = 8) where T <: Real
+function Concepts.evaluate(object::SampleMGF,t::VecOrMat{T};data::VecOrMatOf{Real},order::Integer = 8,data_layout::Symbol=:flatten) where T <: Real
     if isa(t,Matrix) || isa(data,Matrix)
-        throw(DomainError("Unimplemented"))
+        #        throw(DomainError("Unimplemented"))
+        if data_layout == :flatten
+            @info "MGF of the matrix is evaluated by flattening the data matrix into a vector"
+            return dp_get_sample_basis(t,order) * dp_get_sample_mean(data[:],order)
+        end
+        if data_layout == :bycol
+            throw(DomainError("Unimplemented"))
+        end
+        if data_layout == :byrow
+            throw(DomainError("Unimplemented"))
+        end
     end 
     return dp_get_sample_basis(t,order) * dp_get_sample_mean(data,order)
 end

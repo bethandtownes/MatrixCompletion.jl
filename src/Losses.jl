@@ -39,6 +39,9 @@ struct SGD end
 # end
 
 
+export Loss,
+  train
+
 struct Loss{T} <: AbstractLoss where T<:Any
     function Loss{T}() where T<:Any
         @abstract_instance
@@ -177,7 +180,6 @@ end
 
 
 
-
 function train_logistic(fx,y,c,ρ;γ=0.02,iter=20)
     # ∇ = AutoGrad.grad(loss);
     curFx = fx;
@@ -190,7 +192,6 @@ function train_logistic(fx,y,c,ρ;γ=0.02,iter=20)
     # @printf("loss:%f\n",loss_logistic(curFx,y,c,ρ));
     return curFx;
 end
-
 
 
 

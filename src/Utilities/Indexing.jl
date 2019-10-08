@@ -2,104 +2,124 @@ using ..Concepts
 using ..ModelFitting
 import LinearAlgebra
 
+export IndexTracker
 
-struct IndexTracker{T<:Any} <: AbstractTracker
-    indices::Optional{Dict}
 
-    @abstract_instance
-    function IndexTracker{T}() where T<:Any
-        return new{T}(nothing)
+function has_same_dimension(data)
+  if length(data) == 0
+    return false
+  end
+  first_sz = size(data[1])
+  for _data in data
+    if size(_data) != first_sz
+      return false
     end
-
-    function IndexTracker{Symbol}(data::Vararg{Array{Symbol}})
-        ret = Dict()
-        # this is not a proper FP way.. will make it proper FP when I have time!!
-        has_same_dimension = length(unique(map(x -> size(x),data))) == 1
-        if !has_same_dimension
-            throw(DimensionMismatch())
-        end
-        list_of_unique_symbols = map(x -> unique(x),data)
-        number_of_unique_symbols               = mapreduce(x -> length(x),+,list_of_unique_symbols)
-        number_of_unique_symbols_after_flatten = length(unique(collect(Base.Iterators.flatten(list_of_unique_symbols))))
-        if number_of_unique_symbols > number_of_unique_symbols_after_flatten
-            throw(DomainError("There are duplicate symbols"))
-        end
-        for (available_symbols,sub_data) in zip(list_of_unique_symbols,data)
-            for symbol in available_symbols
-                ret[symbol] = findall(x -> x == symbol, sub_data)
-            end
-        end
-        return new(ret)
-    end
+  end
+  return true
 end
+
+
+mutable struct IndexTracker{T<:Any} <: AbstractTracker
+  indices::Optional{Dict{T, Array{CartesianIndex{N}, 1}}} where N<:Any
+  dimension::Optional{Tuple{Vararg{Int64}}}
+
+  function IndexTracker{T}() where {T<:Any}
+    return new(nothing, nothing)
+  end
+  
+  function IndexTracker{T}(data::Vararg{Array{T, N}}) where {T<:Any, N<:Any}
+    if !has_same_dimension(data)
+      @warn("Data stream of different dimension. Won't construct.")
+      throw(DimensionMismatch())
+    end
+    new_object = new(Dict{T,Array{CartesianIndex{N}, 1}}(), size(data[1]))
+    for _data in data
+      disjoint_join(new_object, _data)
+    end
+    return new_object
+  end
+
+end
+
 
 @overload
-function Base.getindex(object::IndexTracker,i::Symbol)
-    if isnothing(object.indices)
-        @warn "indices are not constructed."
-        return nothing
-    end
-    return object.indices[i]
+function Base.getindex(object::IndexTracker{T}, i::T) where T<:Any
+  if isnothing(object.indices)
+    @warn "indices are not constructed."
+    return nothing
+  end
+  return object.indices[i]
 end
 
 
+@overload
+function Base.getproperty(object::IndexTracker{T}, sym::Symbol) where T<:Any
+  if sym == :keys
+    return collect(keys(object.indices))
+  elseif sym == :dimension
+    return getfield(object, :dimension)
+  elseif sym == :indices
+    return getfield(object, :indices)
+  elseif sym == :size
+    return object.dimension
+  elseif sym == :dim
+    return object.dimension
+  end
+end 
 
 
+@overload
+function Base.size(object::IndexTracker)
+  return object.dimension
+end
 
-mutable struct DistributionTracker <: AbstractTracker
-#    view::Array{Symbol}
-     indices::IndexTracker
-    
-    function DistributionTracker(data::Array{MaybeMissing{T},1}) where T<:Real
-        view = Array{Symbol}(undef,size(data))
-        # more to be added
-        if check(:continuous,x) == true
-            view .= choose(:Gaussian,:Gamma,x)
+
+@overload
+function Concepts.provide(object::IndexTracker{T}, data::Vararg{Array{T}}) where T<:Any
+    return IndexTracker{T}(data);
+end
+
+
+@overload
+function Concepts.groupby(obj::IndexTracker{T}, list::Array{T}) where T<:Any
+    result = Dict{T, Dict{T, Array{<:CartesianIndex}}}()
+    for a_key in collect(unique(obj.keys))
+        result[a_key] = Dict{T, Array{<:CartesianIndex}}()
+        for sym in list   
+            result[a_key][sym] = intersect(obj[a_key], obj[sym])
         end
-        if check(:integral,x) == true
-            if check(:binary,x) == true
-                view .= :Bernoulli
-            end
-            view .= choose(:Poisson,:NegativeBinomial,x)
-        end
-        view .= :Unknown
-        view[findall(x->ismissing,data)] = :Missing
-        
-        new_object.indices = IndexTracker(data)
     end
+    return result
+end
 
-    # function DistributionTracker(data::Array{MaybeMissing{T},2};data_layout::Symbol = :bycol) where T<:Real
-    #     view = Array{Symbol}(undef,size(data))
-    #     if data_layout == :bycol
-    #         for i = size(data)[2]
-    #             local x = filter(x -> !ismissing(x),data[:,i])
-    #             if check(:continuous,x) == true
-    #                 view[:,i] .= choose(:Gaussian,:Gamma,x)
-    #             end
-    #             if check(:integral,x) == true
-    #                 if check(:binary,x) == true
-    #                    view[:,i] .= :Bernoulli 
-    #                 end
-    #                 view[:.i] .= choose(:Poisson,:NegativeBinomial,x)
-    #             end
-    #         end
-    #         view[:,i] .= :Unknown
-    #     end
-    #     if data_layout == :byrow
-    #         for i = size(data)[1]
-    #             local x = filter(x -> !ismissing(x),data[i,:])
-    #             if check(:continuous,x) == true
-    #                 view[i,:] .= choose(:Gaussian,:Gamma,x)
-    #             end
-    #             if check(:integral,x) == true
-    #                 if check(:binary,x)
-    #                     view[i,:] .= :Bernoulli
-    #                 end
-    #                 view[i,:] .= choose(:Poisson,:NegativeBinomial,x)
-    #             end
-    #         end
-    #         view[i,:] .= :Unknown
-    #     end
-    #     return new_object
-    # end
+
+@overload
+function Base.convert(::Type{Array{<:CartesianIndex}}, x::Union{Array{Int64, 1}, Array{CartesianIndex}})
+  if typeof(x) <: Array{Int64,1}
+    return [CartesianIndex{1}(_x) for _x in x]
+  end
+  return x
+end
+
+
+@overload 
+function Concepts.disjoint_join(a::IndexTracker{T}, b::Array{T, N}) where {T<:Any, N<:Any}
+  if isnothing(a.dimension)
+    a.dimension = size(b)
+  elseif size(a) != size(b)
+    @show(size(a))
+    @show(size(b))
+    throw(DimensionMismatch())
+  end
+  
+  if isnothing(a.indices)
+    a.indices = Dict{T, Array{CartesianIndex{N}, 1}}()
+  end
+  if length(intersect(unique(a.keys), unique(b))) > 0
+    @warn("New View is not disjoint from the old")
+    throw(MethodError())
+  end
+  for sym in collect(unique(b))
+    a.indices[sym] = convert(Array{<:CartesianIndex} ,findall(x -> x == sym, b))
+  end
 end

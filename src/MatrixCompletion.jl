@@ -34,7 +34,6 @@ include("./ModelFitting.jl")
 include("./Utilities/Utilities.jl")
 include("./Losses.jl")
 
-#include("./Convex/Convex.jl")
 
 
 
@@ -45,7 +44,8 @@ include("./Losses.jl")
 
 
 
-
+@api groupby            Concepts.groupby
+@api join               Concepts.join
 @api provide            Concepts.provide
 @api check              Concepts.check
 @api predict            Concepts.predict
@@ -63,6 +63,7 @@ include("./Losses.jl")
 #==============================================================================#
 #                               Model Fitting                                  #
 #==============================================================================#
+@api AbstractModelView    Concepts.AbstractModelView
 
 
 
@@ -120,22 +121,11 @@ include("./Losses.jl")
 #                                     Tracker                                  #
 #==============================================================================#
 @api IndexTracker     Utilities.IndexTracker
-
-
-
-
-
+@api disjoint_join    Concepts.disjoint_join
 @api Continuous       Concepts.Continuous
 @api Categorical      Concepts.Categorical
-
-
-
-@api MGF             BetterMGF.MGF
-@api SampleMGF       BetterMGF.SampleMGF
-
-
-
-
+@api MGF              BetterMGF.MGF
+@api SampleMGF        BetterMGF.SampleMGF
 
 @api Sampler            Utilities.Sampler
 @api BernoulliModel     Concepts.BernoulliModel
@@ -156,6 +146,11 @@ include("./Losses.jl")
 @api within_radius      Utilities.within_radius
 
 
+
+
+include("./Convex/ADMM.jl")
+
+@api complete ADMM.complete
 
 
 
