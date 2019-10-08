@@ -27,13 +27,13 @@ const TEST_OPTION_TEST_R_WRAPPER = false
 #==============================================================================#
 #                              SUBMODULE FLAGS                                 #
 #==============================================================================#
-const FLAG_TEST_CONCEPTS                         = true
+const FLAG_TEST_CONCEPTS                         = false
 const FLAG_TEST_SAMPLING                         = false
-const FLAG_TEST_MISC                             = true
+const FLAG_TEST_MISC                             = false
 const FLAG_TEST_RANDOM_OBJECTS                   = false
 const FLAG_TEST_DIAGNOSTICS                      = false
 const FLAG_TEST_EXPONENTIAL_FAMILY               = false
-const FLAG_TEST_INDEXING_TOOLS                   = true
+const FLAG_TEST_INDEXING_TOOLS                   = false
 const FLAG_TEST_SPARSE_EIGEN                     = false
 const FLAG_TEST_BETTER_MGF                       = false
 const FLAG_TEST_ESTIMATOR_MLE                    = false
@@ -44,7 +44,11 @@ const FLAG_TEST_LOSS_OPTIMIZER_GAMMA             = false
 const FLAG_TEST_LOSS_OPTIMIZER_GAUSSIAN          = false
 const FLAG_TEST_LOSS_OPTIMIZER_NEGATIVE_BINOMIAL = false
 const FLAG_TEST_LOSS_OPTIMIZER_MULTINOMIAL       = false
-const FLAG_TEST_ALGO_ADMM                        = false
+const FLAG_TEST_ALGO_ADMM                        = true
+
+const FLAG_TEST_ALGO_ADMM_PARALLELL              = false
+
+
 const FLAG_TEST_ALGO_GLRM                        = false
 const FLAG_TEST_ALGO_SVT                         = false
 const FLAG_TEST_ALGO_ONEBIT                      = false

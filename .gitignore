@@ -6,4 +6,5 @@ Manifest.toml
 **/.ipynb_checkpoints
 .projectile
 .projectile~
-
+Tmp.jl
+emacs.desktop

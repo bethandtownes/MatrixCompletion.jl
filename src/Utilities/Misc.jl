@@ -1,4 +1,6 @@
 using Printf
+using PrettyTables
+
 
 const bad_compare_msg(obj,exp,got) = @sprintf("Expected %s to be %s, instead got %s",string(obj),string(exp),string(got))
 
@@ -56,12 +58,24 @@ function Base.zeros(like::Array{T}) where T<:Any
 end
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 # This is necessary due to compiler bug??
-@overload
-const Concepts.check(object::Symbol,arg1) = Concepts.check(Val{object},arg1)
+# @overload
+# const Concepts.check(object::Symbol,arg1) = Concepts.check(Val{object},arg1)
 
-@overload
-const Concepts.check(object::Symbol,arg1,arg2) = Concepts.check(Val{object},arg1,arg2)
+# @overload
+# const Concepts.check(object::Symbol,arg1,arg2) = Concepts.check(Val{object},arg1,arg2)
 
-@overload
-const Concepts.check(object::Symbol,arg1,arg2,arg3) =  Concepts.check(Val{object},arg1,arg2,arg3)
+# @overload
+# const Concepts.check(object::Symbol,arg1,arg2,arg3) =  Concepts.check(Val{object},arg1,arg2,arg3)

@@ -75,8 +75,8 @@ end
         tc1 = rand(100)
         tc1_int = Int.(tc1 .> 0.5)
         logit_tc1 = logit(tc1)
-        @test check(:l2diff, predict(Bernoulli(),forward_map(Bernoulli(),logit_tc1)),tc1_int,0.0)
-        @test check(:l2diff, predict(:Bernoulli,forward_map(:Bernoulli,logit_tc1)),tc1_int,0.0)
+        @test check(:l2diff, predict(Bernoulli(), forward_map(Bernoulli(),logit_tc1)), tc1_int, 0.0)
+        @test check(:l2diff, predict(:Bernoulli, forward_map(:Bernoulli, logit_tc1)), tc1_int, 0.0)
         @test predict(:Bernoulli,[1,1];custom_prediction_function=1) == -1 # 
         tc2 = rand(100,100)
         tc2_int = Int.(tc2 .> 0.5)

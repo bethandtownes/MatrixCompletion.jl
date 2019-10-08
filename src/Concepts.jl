@@ -68,7 +68,7 @@ const VecOrMatOfIntegers = VecOrMat{<:Integer}
 const VecOrMatOf{T}      = VecOrMat{<:T} where T<:Any
 const MaybeMissing{T}    = Union{Missing,T} where T<:Any
 
-
+ 
 const AutoboxedArray{T}  = Union{S,Array{S}} where S<:T
 
 export Optional,
@@ -114,6 +114,7 @@ export ExponentialFamily,
     AbstractPoisson
 
 
+
 function forward_map(distribution::T,args...;kwargs...) where T<:Any
     throw(NotOverLoadedException("forward_map"))
 end
@@ -146,6 +147,19 @@ struct BoundedLinearOperator end
 export LpSpace,
     SchattenClass,
     BoundedLinearOperator
+
+
+
+#==============================================================================#
+#                               Model Fitting                                  #
+#==============================================================================#
+abstract type AbstractModelView         end
+abstract type AbstractFittingMethods    end
+
+
+
+
+
 
 
 
@@ -313,8 +327,18 @@ export provide,
     predict,
     check,
     evaluate,
-    choose
+    choose,
+    join,
+    disjoint_join,
+    groupby
 
+
+
+function groupby() end
+
+function join() end
+
+function disjoint_join() end
 
 function provide(object::T=nothing,arg...;kwargs...) where T<:Any
     throw(DomainError("[provide]: calling abstract method. Concrete implementation needed"))
@@ -327,9 +351,32 @@ function is(is_object::T,arg...;kwargs...) where T<:Any
 end
 
 
-function check(object::T=nothing,arg...;kwargs...) where T<:Any
+function check()
     throw(DomainError("[check]: calling abstract method. Concrete implementation needed"))
 end
+
+
+
+function pretty_print() end
+
+# const Concepts.check(object::Symbol,arg...;kwargs::Optional{Any}...) = Concepts.check(Val{object},arg...;kwargs...)
+
+# This is necessary due to compiler bug??
+# @overload
+# const Concepts.check(object::Symbol,arg1) = Concepts.check(Val{object},arg1)
+@overload
+const Concepts.check(object::Symbol,arg...;kwargs::Optional{Any}...) = Concepts.check(Val{object},arg...;kwargs...)
+
+# This is necessary due to compiler bug??
+# @overload
+# const Concepts.check(object::Symbol,arg1) = Concepts.check(Val{object},arg1)
+
+# @overload
+# const Concepts.check(object::Symbol,arg1,arg2) = Concepts.check(Val{object},arg1,arg2)
+
+# @overload
+# const Concepts.check(object::Symbol,arg1,arg2,arg3) =  Concepts.check(Val{object},arg1,arg2,arg3)
+
 
 
 function predict(object::T=nothing,arg...;kwargs...) where T<:Any
@@ -337,20 +384,25 @@ function predict(object::T=nothing,arg...;kwargs...) where T<:Any
 end
 
 
+function fit() end 
+
 function evaluate(object::T=nothing,arg...;kwargs...) where T<:Any
     throw(NotOverLoadedException("evaluate"))
 end
 
 
-function choose(arg...;kwargs...) where T<:Any
+function choose() where T<:Any
     throw(NotOverLoadedException("evaluate"))
 end
+
+@overload
+const Concepts.choose(a::Symbol,b::Symbol;kwargs...) = Concepts.choose(Val{a},Val{b};kwargs...)
 
 
 #==============================================================================#
 #                             Base Overrides                                   #
 #==============================================================================#
-@overload
+   @overload
 function Base.convert(::Type{MaybeMissing{S}},x::VecOrMatOf{T}) where {T<:Any,S<:Any}
     ret = nothing;
     if isa(x,Vector)
