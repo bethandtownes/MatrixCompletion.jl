@@ -16,7 +16,7 @@ import LinearAlgebra
 include("./Misc.jl")
 include("./Diagnostics.jl")
 include("./ExponentialFamily.jl")
-# include("./FastEigen.jl")
+include("./FastEigen.jl")
 include("./RandomMatrices.jl")
 include("./Indexing.jl")
 include("./Sampling.jl")

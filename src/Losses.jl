@@ -141,7 +141,7 @@ end
 
 
 ## Use the reciprocal link instead of the negative reciprocal link
-function grad(loss::Loss{AbstractGamma},x,y,c,ρ)
+function grad(loss::Loss{AbstractGamma}, x, y, c, ρ)
     return y .- (1 ./ x) .+ (2*ρ) .* (x .- c)
 end
 
@@ -211,7 +211,9 @@ function train(native_loss::Loss{T};
     DEBUG_MODE && @info "Gradient Descent with native differentitaion"
     curFx = fx;
     for i = 1:iter 
-        curFx = curFx .- γ .* grad(native_loss,curFx,y,c,ρ);
+      # curFx = curFx - γ * grad(native_loss, curFx, y, c, ρ);
+      curFx .-= γ * grad(native_loss, curFx, y, c, ρ);
+      # curFx .-=  γ .* grad.(native_loss, curFx, y, c, ρ)
         if verbose == true
             @printf("loss:%f\n",evaluate(native_loss,curFx,y,c,ρ ))
         end

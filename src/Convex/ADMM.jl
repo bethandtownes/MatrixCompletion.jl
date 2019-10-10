@@ -9,9 +9,20 @@ using SparseArrays
 using ..Concepts
 using ..ModelFitting
 using ..Utilities
+using ..Utilities.FastEigen
 using ..Losses
+using ..MathLib
+
+import LinearAlgebra:norm
+
+
 
 export complete
+
+
+
+
+
 
 mutable struct RunHistory
   primfeas::Array{Float64,1}
@@ -23,7 +34,31 @@ mutable struct RunHistory
 end
 
 
-function sdpProjection(data)
+
+import KrylovKit
+
+
+# function project(v,e)
+#     return e * diagm(0 => v) * e';
+# end
+
+
+function sdpProjection(mat::Array{Float64, 2})
+  λ, X    = eigs(KrylovMethods(), mat, nev = 20)
+  # @show(λ)
+  # @show(X)
+  # @show(size(λ))
+  # @show(size(X))
+  return project(λ, X)
+  # posEigenValuesIndex = findall(x -> x > 0, λ);
+  # posEigenValues      = λ[posEigenValuesIndex];
+  # posEigenVectors     = X[:,posEigenValuesIndex];
+  # projectedMatrix     = posEigenVectors * diagm(0 => posEigenValues) *posEigenVectors';
+  # return projectedMatrix;
+end
+
+
+function sdpProjection0(data)
   eigDecomposition    = eigen(data);
   posEigenValuesIndex = findall(x -> x>0,eigDecomposition.values);
   posEigenValues      = eigDecomposition.values[posEigenValuesIndex];
@@ -37,6 +72,7 @@ function logisticLoss(x,y)
   f_x = Losses.σ.(x);
   return -sum(y .* log.(f_x) + (1 .- y) .* log.(1 .- f_x));
 end
+
 
 
 function l1BallProjection(v,b)
@@ -62,7 +98,7 @@ function l1BallProjection(v,b)
   return x;
 end
 
-
+@private
 function initialize_warmup(tracker)
   warmup = Dict{Symbol, Array{Float64}}()
   if haskey(tracker, :Bernoulli) && length(tracker[:Bernoulli][:Observed]) > 0
@@ -82,7 +118,7 @@ end
 function update(::Type{Val{:Gaussian}}, A::Array{MaybeMissing{Float64}},
                 Y12::Array{Float64}, tracker::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}}, ρ::Float64)
   if haskey(tracker, :Gaussian) && length(tracker[:Gaussian][:Observed]) > 0
-    Y12[tracker[:Gaussian][:Observed]] = (1 / (1 + ρ)) * (A[tracker[:Gaussian][:Observed]] + ρ * Y12[tracker[:Gaussian][:Observed]])
+    Y12[tracker[:Gaussian][:Observed]] .= (1 / (1 + ρ)) * (A[tracker[:Gaussian][:Observed]] + ρ * Y12[tracker[:Gaussian][:Observed]])
   end
 end
 
@@ -105,21 +141,26 @@ end
 
 
 @private
-function update(::Type{Val{:Poisson}}, A::Array{MaybeMissing{Float64}},
-                Y12::Array{Float64}, tracker::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}},
-                ρ::Float64, gd_iter::Int64, warmup::Dict{Symbol, Array{Float64}}, γ::Float64, use_autodiff::Bool)
+function update(::Type{Val{:Poisson}},
+                A            ::Array{MaybeMissing{Float64}},
+                Y12          ::Array{Float64},
+                tracker      ::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}},
+                ρ            ::Float64,
+                gd_iter      ::Int64,
+                warmup       ::Dict{Symbol, Array{Float64}},
+                γ            ::Float64,
+                use_autodiff ::Bool)
   if haskey(tracker, :Poisson) && length(tracker[:Poisson][:Observed]) > 0
     Y12[tracker[:Poisson][:Observed]] = train(use_autodiff ? provide(Loss{AbstractPoisson}()) : Loss{AbstractPoisson}(),
-                                                fx   = warmup[:Poisson],
-                                                y    = A[tracker[:Poisson][:Observed]],
-                                                c    = Y12[tracker[:Poisson][:Observed]],
-                                                ρ    = ρ,
-                                                iter = gd_iter,
-                                                γ    = 0.1)
+                                              fx   = warmup[:Poisson],
+                                              y    = A[tracker[:Poisson][:Observed]],
+                                              c    = Y12[tracker[:Poisson][:Observed]],
+                                              ρ    = ρ,
+                                              iter = gd_iter,
+                                              γ    = 0.1)
     warmup[:Poisson] = Y12[tracker[:Poisson][:Observed]]
   end
 end
-
 
 @private
 function update(::Type{Val{:Gamma}}, A::Array{MaybeMissing{Float64}},
@@ -137,19 +178,107 @@ function update(::Type{Val{:Gamma}}, A::Array{MaybeMissing{Float64}},
   end
 end
 
+@private
+function update(::Type{Val{:ρ}}, primal_feasibility::Float64, dual_feasibility::Float64, current::Float64 = nothing)
+  if (primal_feasibility < 0.5 * dual_feasibility)
+    return 0.7 * current
+  elseif (primal_feasibility > 2 * dual_feasibility)
+    return 1.3 * current
+  end
+  return current
+end
 
-
-
+@private
+function balance_gap(ρ::Float64, primal_feasibility::Float64, dual_feasibility::Float64)
+  if (primal_feasibility < 0.5 * dual_feasibility)
+    return 0.7 * ρ
+  elseif (primal_feasibility > 2 * dual_feasibility)
+    return 1.3 * ρ
+  end
+  return ρ
+end
 
 # update
 const update(arg::Symbol, args...) = update(Val{arg}, args...)
+
+@private
+function calculate_primal_and_dual_residual(X, Z, W, C, Xinput, ρ)
+  Fnorm = x -> norm(x,2);
+  Xdual    = -ρ * (X - Xinput)
+  Zdual    = ρ * (Z - C)
+  normX    = 1 + Fnorm(X)
+  primfeas = Fnorm(X - Z) / normX
+  err1     = 1/ρ * Fnorm(W - Xdual)
+  err2     = 1/ρ * Fnorm(W - Zdual)
+  dualfeas = maximum([err1, err2]) / normX
+  return primfeas, dualfeas
+end
+
+function set_diagonal(mat::Array{Float64, 2}, val::Array{Float64, 1})
+  [mat[i, i] = val[i] for i in 1:length(val)]
+end
+
+function calculate_Z12_update(A, C,tracker, ρ, α, warmup, use_autodiff, gd_iter)
+  d1, d2 = size(A)
+  Z12 = C[1:d1, (d1+1):(d1+d2)]
+  update(:Gaussian,  A, Z12, tracker, ρ)
+  update(:Bernoulli, A, Z12, tracker, ρ, gd_iter, warmup, 0.2, use_autodiff)
+  update(:Poisson,   A, Z12, tracker, ρ, 20, warmup, 0.05, use_autodiff)
+  update(:Gamma,     A, Z12, tracker, ρ, 1000, warmup, 0.005, use_autodiff)
+  project!(ClosedInterval{Float64}(-α, α), Z12)
+  # Z12 .= project(ClosedInterval{Float64}(-α, α), Z12)
+  # @. Z12      = max.(-α, min.(Z12, α))
+  return Z12
+end
+
+function set_block_12(mat, d1, d2, val)
+  @. mat[1:d1, (d1+1):(d1+d2)] = val
+end
+
+function set_block_21(mat, d1, d2, val)
+  @. mat[(d1+1):(d1+d2), 1:d1] = val
+end
+
+function initialize_trackers(A::Array{MaybeMissing{Float64}}, type_assignment)
+  type_tracker = Utilities.IndexTracker{Symbol}()
+  if type_assignment == nothing
+    disjoint_join(type_tracker, Concepts.fit(DistributionDeduction(), A))
+  else
+    disjoint_join(type_tracker, type_assignment)
+  end
+  disjoint_join(type_tracker, Concepts.fit(ObservedOrMissing(), A))
+  return groupby(type_tracker, [:Observed, :Missing]), type_tracker
+  # tracker = groupby(type_tracker, [:Observed, :Missing])
+  # return tracker 
+end
+
+function ensure_feasible(A::Array{MaybeMissing{Float64}})
+    if isnothing(A)
+    @error("please provide data matrix")
+    throw(MethodError())
+  end
+end
+
+function print_optimization_log(iter, X, Z, Z12, W, II, Rp, Rd, ρ, λ, μ)
+  R = abs.(maximum(diag(Z)))
+  # obj1 = norm(Z12[tracker[:Gaussian][:Observed]] -  A[tracker[:Gaussian][:Observed]])^2
+  #             + logisticLoss(Z12[tracker[:Bernoulli][:Observed]], A[tracker[:Bernoulli][:Observed]]);
+  obj1 = 0
+  obj2 = λ * R
+  obj3 = μ * tr(II * X)
+  maxZ12 = maximum(abs.(Z12))
+  @printf("\n %3.0f %3.2e %3.2e| %3.2e %5.2f %5.2f %3.2e| %3.2e|", iter, Rp, Rd, λ, R, maxZ12, μ, ρ)
+  @printf("| obj1: %3.2e obj2: %3.2e obj3: %3.2e|", obj1, obj2, obj3)
+end
+
+
 
 
 function complete(;A::Array{MaybeMissing{Float64}}   = nothing,
                   α::Float64         = maximum(A[findall(x -> !ismissing(x),A)]),
                   λ::Float64         = 5e-1,
                   μ::Float64         = 5e-4,
-                  σ::Float64         = 0.3,
+                  ρ::Float64         = 0.3,
                   τ::Float64         = 1.618,
                   maxiter::Int64     = 200,
                   stoptol::Float64   = 1e-5,
@@ -157,95 +286,83 @@ function complete(;A::Array{MaybeMissing{Float64}}   = nothing,
                   gd_iter::Int64     = 50,
                   debug_mode::Bool   = false,
                   interactive_plot   = false,
-                  type_assignment    = nothing)
-  if isnothing(A)
-    @error("please provide data matrix")
-    throw(MethodError())
-  end
-  d1,d2 = size(A);
-  Y, X, W, C, R = [zeros(d1 + d2, d1 + d2) for i = 1:5]
+                  type_assignment    = nothing,
+                  dynamic_ρ          = true)
+  ensure_feasible(A)
+  d1, d2 = size(A);
+  Z::Array{Float64, 2} = zeros(d1 + d1,  d1 + d2)
+  X::Array{Float64, 2} = zeros(d1 + d1,  d1 + d2)
+  W::Array{Float64, 2} = zeros(d1 + d1,  d1 + d2)
+  C::Array{Float64, 2} = zeros(d1 + d1,  d1 + d2)
   II = sparse(1.0I, d1 + d2, d1 + d2)
-  Fnorm = x -> norm(x,2);
-  _tracker = Utilities.IndexTracker{Symbol}()
-  if type_assignment == nothing
-    disjoint_join(_tracker, Concepts.fit(DistributionDeduction(), A))
-  else
-    disjoint_join(_tracker, type_assignment)
-  end
-  disjoint_join(_tracker, Concepts.fit(ObservedOrMissing(), A))
-  @show(keys(_tracker.indices))
-  tracker = groupby(_tracker, [:Observed, :Missing])
-  # @show(tracker[:Poisson])
-  σReset    = 1
-  breakyes  = 0;
-  runhist = RunHistory()
-  warmup = initialize_warmup(tracker)
-  
-  for iter = 1:maxiter
-    σInv     = 1/σ
-    Xinput   = Y + σInv * W
-    # Xinput   = Y + W / σ
-    X        = sdpProjection(Y + W / σ - (1/σ * μ) * II)
-    Xdual    = -σ * (X - Xinput)
-    # Step 2
-    C     = X - σInv * W
-    Y12   = C[1:d1, (d1+1):(d1+d2)]
-    update(:Gaussian,  A, Y12, tracker, σ)
-    update(:Bernoulli, A, Y12, tracker, σ, gd_iter, warmup, 0.2, use_autodiff)
-    update(:Poisson,   A, Y12, tracker, σ, 20, warmup, 0.05, use_autodiff)
-    update(:Gamma,   A, Y12, tracker, σ, 200, warmup, 0.05, use_autodiff)
-    Y12      = max.(-α, min.(Y12, α))
-    ϵ        = λ * σInv
-    # diagC = diag(C)
-    # diagYtmp =  diag(C) - ϵ * l1BallProjection(diag(C) / ϵ, 1)
-    Y11      = C[1:d1, 1:d1]
-    Y22      = C[d1+1:d1+d2, d1+1:d1+d2]
-    Y        = [Y11  Y12;
-                Y12' Y22]
-    Y        = Y+spdiagm(0 => diag(C) - ϵ * l1BallProjection(diag(C) / ϵ, 1) - diag(Y))
-    Ydual    = σ * (Y - C)
-    # step 3
-    W = W + τ * σ * (Y - X)
+  Xinput::Array{Float64, 2} = zeros(d1 + d1,  d1 + d2)
+  # Fnorm = x -> norm(x,2);
+  tracker, type_tracker = initialize_trackers(A, type_assignment)
+  warmup                = initialize_warmup(tracker)
 
-    
-    normX    = 1 + Fnorm(X)
-    primfeas = Fnorm(X - Y) / normX
-    err1     = σInv * Fnorm(W - Xdual)
-    err2     = σInv * Fnorm(W - Ydual)
-    dualfeas = maximum([err1, err2]) / normX
-    push!(runhist.primfeas, primfeas)
-    push!(runhist.dualfeas, dualfeas)
-    if (max(primfeas, dualfeas) < stoptol) | (iter == maxiter)
-      breakyes = 1
-    end
-    if (max(primfeas, dualfeas) < sqrt(stoptol)) & (dualfeas > 1.5 * minimum(runhist.dualfeas[max(iter - 49, 1):iter])) & (iter > 150)
-      breakyes = 2
-    end
-    if (rem(iter,20)==1) | (breakyes > 0)
-      R = abs.(maximum(diag(Y)))
-      # obj1 = norm(Y12[tracker[:Gaussian][:Observed]] -  A[tracker[:Gaussian][:Observed]])^2
-      #             + logisticLoss(Y12[tracker[:Bernoulli][:Observed]], A[tracker[:Bernoulli][:Observed]]);
-      obj1 = 0
-      obj2 = λ * R
-      obj3 = μ * tr(II * X)
-      maxY12 = maximum(abs.(Y12))
-      @printf("\n %3.0f %3.2e %3.2e| %3.2e %5.2f %5.2f %3.2e| %3.2e|", iter, primfeas, dualfeas, λ, R, maxY12, μ, σ)
-      @printf("| obj1: %3.2e obj2: %3.2e obj3: %3.2e|", obj1, obj2, obj3)
-    end
-    if (σReset > 0) & (rem(iter, 10)==0)
-      if (primfeas < 0.5 * dualfeas)
-        σ = 0.7 * σ
-      elseif (primfeas > 2 * dualfeas)
-        σ = 1.3 * σ
+  for iter = 1:maxiter
+    @. Xinput = Z + W/ρ
+    # step 1
+    # @time X = sdpProjection(Z + W / ρ - (μ / ρ) * II)
+    @time X = project(SemidefiniteCone(rank = 20), Z + W / ρ - (μ / ρ) * II)
+    # Step 2
+    @. C = X - 1/ρ * W; @. Z = C
+    Z12 = calculate_Z12_update(A, C, tracker, ρ, α, warmup, use_autodiff, gd_iter)
+    set_block_12(Z, d1, d2, Z12)
+    set_block_21(Z, d1, d2, Z12')
+    set_diagonal(Z, diag(C) - (λ / ρ) * l1BallProjection(diag(C) * ρ / λ, 1))
+    # step 3
+    @. W = W + τ * ρ * (Z - X)
+    # calculation of dual program
+    # primfeas, dualfeas = calculate_primal_and_dual_residual(X, Z, W, C, Xinput, ρ)
+    if rem(iter, 10)==1
+      primfeas, dualfeas = calculate_primal_and_dual_residual(X, Z, W, C, Xinput, ρ)
+      print_optimization_log(iter, X, Z, Z12, W, II, primfeas, dualfeas, ρ, λ, μ)
+      # R = abs.(maximum(diag(Z)))
+      # # obj1 = norm(Z12[tracker[:Gaussian][:Observed]] -  A[tracker[:Gaussian][:Observed]])^2
+      # #             + logisticLoss(Z12[tracker[:Bernoulli][:Observed]], A[tracker[:Bernoulli][:Observed]]);
+      # obj1 = 0
+      # obj2 = λ * R
+      # obj3 = μ * tr(II * X)
+      # maxZ12 = maximum(abs.(Z12))
+      # @printf("\n %3.0f %3.2e %3.2e| %3.2e %5.2f %5.2f %3.2e| %3.2e|", iter, primfeas, dualfeas, λ, R, maxZ12, μ, ρ)
+      # @printf("| obj1: %3.2e obj2: %3.2e obj3: %3.2e|", obj1, obj2, obj3)
+
+      if dynamic_ρ
+        ρ = balance_gap(ρ, primfeas, dualfeas)
       end
     end
-    if (breakyes > 0)
-      @printf("\n break = %1.0f\n", breakyes)
-      break;
-    end
+    # if dynamic_ρ && (rem(iter, 10) == 0)
+    #   ρ = balance_gap(ρ, primfeas, dualfeas)
+    # end
   end
-completedMatrix = C[1:d1, (d1+1):(d1+d2)]
-return completedMatrix, _tracker
+  completedMatrix = C[1:d1, (d1+1):(d1+d2)]
+  return completedMatrix, type_tracker, tracker
+end
 
 end
-end
+
+
+
+
+# early exit
+    # if (max(primfeas, dualfeas) < stoptol) | (iter == maxiter) 
+    #   breakyes = 1
+    # end
+    # if (max(primfeas, dualfeas) < sqrt(stoptol)) & (dualfeas > 1.5 * minimum(runhist.dualfeas[max(iter - 49, 1):iter])) & (iter > 150)
+    #   breakyes = 2
+    # end
+
+
+# tune ρ
+    # if (ρReset > 0) & (rem(iter, 10)==0)
+    #   if (primfeas < 0.5 * dualfeas)
+    #     ρ = 0.7 * ρ
+    #   elseif (primfeas > 2 * dualfeas)
+    #     ρ = 1.3 * ρ
+    #   end
+    # end
+    # if (breakyes > 0)
+    #   @printf("\n break = %1.0f\n", breakyes)
+    #   break;
+    # end

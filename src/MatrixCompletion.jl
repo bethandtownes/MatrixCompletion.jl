@@ -27,12 +27,18 @@ end
 
 export dbg,see,format
 
+
 include("./Concepts.jl")
 include("./MGF.jl")
 include("./Estimator.jl")
 include("./ModelFitting.jl")
 include("./Utilities/Utilities.jl")
 include("./Losses.jl")
+
+
+include("./Library/MathLibSignatures.jl")
+include("./Library/MathLib.jl")
+
 
 
 
@@ -42,6 +48,11 @@ include("./Losses.jl")
 @api VecOrMatOf                 Concepts.VecOrMatOf
 @api UnivariateDistributions    Concepts.UnivariateDistributions 
 
+
+@api eigs           Utilities.FastEigen.eigs
+@api NativeLOBPCG   Utilities.FastEigen.NativeLOBPCG
+@api NativeEigen    Utilities.FastEigen.NativeEigen
+@api KrylovMethods  Utilities.FastEigen.KrylovMethods
 
 
 @api groupby            Concepts.groupby
