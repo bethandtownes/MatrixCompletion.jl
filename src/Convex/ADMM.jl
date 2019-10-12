@@ -10,6 +10,7 @@ using ..Concepts
 using ..ModelFitting
 using ..Utilities
 using ..Utilities.FastEigen
+
 using ..Losses
 using ..MathLib
 
@@ -57,7 +58,6 @@ function sdpProjection(mat::Array{Float64, 2})
   # return projectedMatrix;
 end
 
-
 function sdpProjection0(data)
   eigDecomposition    = eigen(data);
   posEigenValuesIndex = findall(x -> x>0,eigDecomposition.values);
@@ -67,13 +67,10 @@ function sdpProjection0(data)
   return projectedMatrix;
 end
 
-
 function logisticLoss(x,y)
   f_x = Losses.σ.(x);
   return -sum(y .* log.(f_x) + (1 .- y) .* log.(1 .- f_x));
 end
-
-
 
 function l1BallProjection(v,b)
   if (norm(v,1) <= b);
@@ -113,7 +110,6 @@ function initialize_warmup(tracker)
   return warmup
 end
 
-
 @private 
 function update(::Type{Val{:Gaussian}}, A::Array{MaybeMissing{Float64}},
                 Y12::Array{Float64}, tracker::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}}, ρ::Float64)
@@ -138,7 +134,6 @@ function update(::Type{Val{:Bernoulli}}, A::Array{MaybeMissing{Float64}},
     warmup[:Bernoulli] = Y12[tracker[:Bernoulli][:Observed]]
   end
 end
-
 
 @private
 function update(::Type{Val{:Poisson}},
@@ -239,6 +234,7 @@ function set_block_21(mat, d1, d2, val)
   @. mat[(d1+1):(d1+d2), 1:d1] = val
 end
 
+@private
 function initialize_trackers(A::Array{MaybeMissing{Float64}}, type_assignment)
   type_tracker = Utilities.IndexTracker{Symbol}()
   if type_assignment == nothing
@@ -252,6 +248,7 @@ function initialize_trackers(A::Array{MaybeMissing{Float64}}, type_assignment)
   # return tracker 
 end
 
+@private
 function ensure_feasible(A::Array{MaybeMissing{Float64}})
     if isnothing(A)
     @error("please provide data matrix")
@@ -259,8 +256,47 @@ function ensure_feasible(A::Array{MaybeMissing{Float64}})
   end
 end
 
-function print_optimization_log(iter, X, Z, Z12, W, II, Rp, Rd, ρ, λ, μ)
+
+# function (str)
+#     return rpad(str,70,".")
+# end
+function append_both_ends(str::String, token::String)
+  return token * str * token
+end
+
+@overload
+function Base.similar(str::String, token::Char)
+  return token^length(str)
+end
+
+function toprule(header_list::Array{String})
+  # new_rule = map(x -> Base.repeat("-", append_both_ends(str, " ")), header_list)
+  new_rule = map(x -> Base.similar(append_both_ends(x, " "), '-'), header_list)
+  push!(new_rule, "") 
+  new_rule2 = foldl((x, y) -> x * "+" *y, new_rule, init="")
+  @printf("%s\n", new_rule2)
+end
+
+
+
+@private
+function print_optimization_log(iter,A, X, Z, Z12, W, II, Rp, Rd, ρ, λ, μ, tracker)
+
+  
   R = abs.(maximum(diag(Z)))
+  gaussian_loss = norm(Z12[tracker[:Gaussian][:Observed]] -  A[tracker[:Gaussian][:Observed]])^2
+
+  # header_list = ["Iter", "R(primal)", " R(dual)",  "ℒ(Gaussian)", "ℒ(Bernoulli)", "ℒ(Poisson)", "ℒ(Gamma)", "λ‖diag(Z)‖ᵢ", "μ⟨I, X⟩", "‖Z₁₂‖ᵢ"]
+  
+
+  # toprule(header_list)
+  # @printf("+------+-----------+---------+-------------+--------------+------------+----------+-------------+---------+--------+\n")
+  # @printf("| Iter | R(primal) | R(dual) | ℒ(Gaussian) | ℒ(Bernoulli) | ℒ(Poisson) | ℒ(Gamma) | λ‖diag(Z)‖ᵢ | μ⟨I, X⟩ | ‖Z₁₂‖ᵢ |\n")
+  # @printf("+------+-----------+---------+-------------+--------------+------------+----------+-------------+---------+--------+\n")
+  # @printf("| %3.0f |", iter)
+  # @printf("Loss{Gaussian}: %3.2e\n", gaussian_loss)
+
+  
   # obj1 = norm(Z12[tracker[:Gaussian][:Observed]] -  A[tracker[:Gaussian][:Observed]])^2
   #             + logisticLoss(Z12[tracker[:Bernoulli][:Observed]], A[tracker[:Bernoulli][:Observed]]);
   obj1 = 0
@@ -270,9 +306,6 @@ function print_optimization_log(iter, X, Z, Z12, W, II, Rp, Rd, ρ, λ, μ)
   @printf("\n %3.0f %3.2e %3.2e| %3.2e %5.2f %5.2f %3.2e| %3.2e|", iter, Rp, Rd, λ, R, maxZ12, μ, ρ)
   @printf("| obj1: %3.2e obj2: %3.2e obj3: %3.2e|", obj1, obj2, obj3)
 end
-
-
-
 
 function complete(;A::Array{MaybeMissing{Float64}}   = nothing,
                   α::Float64         = maximum(A[findall(x -> !ismissing(x),A)]),
@@ -289,21 +322,19 @@ function complete(;A::Array{MaybeMissing{Float64}}   = nothing,
                   type_assignment    = nothing,
                   dynamic_ρ          = true)
   ensure_feasible(A)
-  d1, d2 = size(A);
-  Z::Array{Float64, 2} = zeros(d1 + d1,  d1 + d2)
-  X::Array{Float64, 2} = zeros(d1 + d1,  d1 + d2)
-  W::Array{Float64, 2} = zeros(d1 + d1,  d1 + d2)
-  C::Array{Float64, 2} = zeros(d1 + d1,  d1 + d2)
-  II = sparse(1.0I, d1 + d2, d1 + d2)
-  Xinput::Array{Float64, 2} = zeros(d1 + d1,  d1 + d2)
-  # Fnorm = x -> norm(x,2);
-  tracker, type_tracker = initialize_trackers(A, type_assignment)
-  warmup                = initialize_warmup(tracker)
+  d1, d2                               = size(A);
+  Z::Array{Float64, 2}                 = zeros(d1 + d1,  d1 + d2)
+  X::Array{Float64, 2}                 = zeros(d1 + d1,  d1 + d2)
+  W::Array{Float64, 2}                 = zeros(d1 + d1,  d1 + d2)
+  C::Array{Float64, 2}                 = zeros(d1 + d1,  d1 + d2)
+  Xinput::Array{Float64, 2}            = zeros(d1 + d1,  d1 + d2)
+  II                                   = sparse(1.0I, d1 + d2, d1 + d2)
+  tracker, type_tracker                = initialize_trackers(A, type_assignment)
+  warmup::Dict{Symbol, Array{Float64}} = initialize_warmup(tracker)
 
   for iter = 1:maxiter
     @. Xinput = Z + W/ρ
     # step 1
-    # @time X = sdpProjection(Z + W / ρ - (μ / ρ) * II)
     @time X = project(SemidefiniteCone(rank = 20), Z + W / ρ - (μ / ρ) * II)
     # Step 2
     @. C = X - 1/ρ * W; @. Z = C
@@ -317,7 +348,7 @@ function complete(;A::Array{MaybeMissing{Float64}}   = nothing,
     # primfeas, dualfeas = calculate_primal_and_dual_residual(X, Z, W, C, Xinput, ρ)
     if rem(iter, 10)==1
       primfeas, dualfeas = calculate_primal_and_dual_residual(X, Z, W, C, Xinput, ρ)
-      print_optimization_log(iter, X, Z, Z12, W, II, primfeas, dualfeas, ρ, λ, μ)
+      print_optimization_log(iter, A, X, Z, Z12, W, II, primfeas, dualfeas, ρ, λ, μ, tracker)
       # R = abs.(maximum(diag(Z)))
       # # obj1 = norm(Z12[tracker[:Gaussian][:Observed]] -  A[tracker[:Gaussian][:Observed]])^2
       # #             + logisticLoss(Z12[tracker[:Bernoulli][:Observed]], A[tracker[:Bernoulli][:Observed]]);
