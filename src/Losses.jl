@@ -12,8 +12,10 @@ const VERBOSE_MODE = true
 using Printf
 import Random, AutoGrad, Distributions
 using ..Concepts
+using ..Utilities.BatchUtils
+# export BatchFactory
 
-struct SGD end
+# struct SGD end
 
 
 
@@ -40,7 +42,7 @@ struct SGD end
 
 
 export Loss,
-  train
+  train, sgd_train, subgrad_train
 
 struct Loss{T} <: AbstractLoss where T<:Any
     function Loss{T}() where T<:Any
@@ -90,7 +92,7 @@ function Concepts.provide(loss::Loss{AbstractBernoulli})
 end
 
 
-function evaluate(loss::Loss{AbstractBernoulli},
+function Concepts.evaluate(loss::Loss{AbstractBernoulli},
                   x,y,c,ρ)
     return  -sum(y .* log.(σ.(x)) .+ (1 .- y) .* log.(1 .- σ.(x)))
           .+ sum(ρ .* (x .- c).^2);
@@ -114,7 +116,7 @@ function Concepts.provide(loss::Loss{AbstractPoisson})
 end
 
 
-function evaluate(loss::Loss{AbstractPoisson},
+function Concepts.evaluate(loss::Loss{AbstractPoisson},
                   x,y,c,ρ)
     return sum(exp.(x) .- y .* x) + sum(ρ .* (x .- c).^2)
 end
@@ -135,16 +137,46 @@ function Concepts.provide(loss::Loss{AbstractGamma})
 end
 
 
-function evaluate(loss::Loss{AbstractGamma},x,y,c,ρ)
-    return sum(x .* y .- log.(x))+ sum(ρ .* (x .- c).^2)
+# function Concepts.evaluate(loss::Loss{AbstractGamma},x,y,c,ρ)
+#     return sum(x .* y .- log.(x))+ sum(ρ .* (x .- c).^2)
+# end
+
+
+function Concepts.evaluate(loss::Loss{AbstractGamma},x,y,c,ρ)
+    return sum(y .* exp.(x) .- x) + sum(ρ .* (x .- c).^2)
 end
+
+# function _evaluate(loss::Loss{AbstractGamma},x,y,c,ρ)
+#   x₋ = x[findall(a -> a < 0, x)]
+#   y₋ = y[findall(a -> a < 0, x)]
+#   x₊ = x[findall(a -> a > 0, x)]
+#   y₊ = x[findall(a -> a > 0, x)]
+#   return (-1) * sum(x₋ .* y₋ .+ log.(-x₋)) + (-1) * sum(-x₊ .* y₊ .+ log.(x₊)) + sum(ρ .* (x .- c).^2)
+# end
 
 
 ## Use the reciprocal link instead of the negative reciprocal link
+# function grad(loss::Loss{AbstractGamma}, x, y, c, ρ)
+#     return y .- (1 ./ x) .+ (2*ρ) .* (x .- c)
+# end
+
+
+
+
 function grad(loss::Loss{AbstractGamma}, x, y, c, ρ)
-    return y .- (1 ./ x) .+ (2*ρ) .* (x .- c)
+  return y .* exp.(x) .- 1
 end
 
+
+
+function subgrad(loss::Loss{AbstractGamma}, x, y, c, ρ)
+  ∇ = zeros(length(x))
+  pos_id = findall(a -> a > 0, x)
+  neg_id = findall(a -> a < 0, x)
+  ∇[neg_id] = (-1) .* (y[neg_id] - (1 ./ x[neg_id])) .+ (2*ρ) .* (x[neg_id] .- c[neg_id])
+  ∇[pos_id] = (-1) .* (-y[pos_id] + (1 ./ x[pos_id])) .+ (2*ρ) .* (x[pos_id] .- c[pos_id])
+  return ∇
+end
 
 
 
@@ -161,21 +193,21 @@ end
 #==============================================================================#
 #                         Negative Binomial Loss                               #
 #==============================================================================#
-function Concepts.provide(loss::Loss{AbstractNegativeBinomial})
-    L(x,y,c,ρ) = sum(-x .* y .- log.(-x))+ sum(ρ .* (x .- c).^2)
-   return L
-end
+# function Concepts.provide(loss::Loss{AbstractNegativeBinomial})
+
+#    return L
+# end
 
 
-function evaluate(loss::Loss{AbstractNegativeBinomial},x,y,c,ρ)
-    return sum(x .* y .- log.(x))+ sum(ρ .* (x .- c).^2)
-end
+# function evaluate(loss::Loss{AbstractNegativeBinomial},x,y,c,ρ)
+
+# end
 
 
-## Use the reciprocal link instead of the negative reciprocal link
-function grad(loss::Loss{AbstractNegativeBinomial},x,y,c,ρ)
-    return y .- (1 ./ x) .+ (2*ρ) .* (x .- c)
-end
+# ## Use the reciprocal link instead of the negative reciprocal link
+# function grad(loss::Loss{AbstractNegativeBinomial},x,y,c,ρ)
+
+# end
 
 
 
@@ -207,15 +239,32 @@ end
 
 
 function train(native_loss::Loss{T};
-               fx,y,c,ρ,γ=0.02,iter=20,verbose=false) where T<:ExponentialFamily
+               fx, y, c, ρ, γ=0.02, iter=20, verbose=false, subgrad = false) where T<:ExponentialFamily
     DEBUG_MODE && @info "Gradient Descent with native differentitaion"
     curFx = fx;
     for i = 1:iter 
-      # curFx = curFx - γ * grad(native_loss, curFx, y, c, ρ);
       curFx .-= γ * grad(native_loss, curFx, y, c, ρ);
-      # curFx .-=  γ .* grad.(native_loss, curFx, y, c, ρ)
+      # curFx .-= γ * grad(native_loss, curFx, y, c, ρ);
+      # if project == true
+      #   curFx = abs.(curFx)
+      # end
+      if verbose == true
+        @printf("loss:%f\n", Concepts.evaluate(native_loss,curFx,y,c,ρ ))
+      end
+    end
+    return curFx;
+end
+
+
+
+function subgrad_train(native_loss::Loss{T};
+               fx, y, c, ρ, γ=0.02, iter=20, verbose=false) where T<:ExponentialFamily
+    DEBUG_MODE && @info "Gradient Descent with native differentitaion"
+    curFx = fx;
+    for i = 1:iter 
+      curFx .-= γ * subgrad(native_loss, curFx, y, c, ρ);
         if verbose == true
-            @printf("loss:%f\n",evaluate(native_loss,curFx,y,c,ρ ))
+            @printf("loss:%f\n",_evaluate(native_loss,curFx,y,c,ρ ))
         end
     end
     return curFx;
@@ -223,22 +272,64 @@ end
 
 
 
-# function train(algo::SGD,loss,fx,y,c,ρ;γ=0.02,epoch=10,num_of_batch=20)
-#     ∇ = AutoGrad.grad(loss);
-#     n = length(fx);
-#     curFx = fx;
-#     batch_size = Int(n/num_of_batch);
-#     for i = 1:epoch
-#         for sample in 1:batch_size:n
-#             batch = sample:min(sample+batch_size-1,n);
-#             curFx[batch] = curFx[batch] .- γ .* ∇(curFx[batch],y[batch],c[batch],ρ);
-#             @printf("loss:%f\n",loss(curFx,y,c,ρ));
-#         end
-#         @printf("iter:%d, loss:%f\n",i,loss(curFx,y,c,ρ));
-#     end
-#     return curFx;
-# end
+
+function sgd_train(native_loss::Loss{T};
+                   fx, y, c, ρ, α, ρ₁, ρ₂, batch_size, epoch) where T<:ExponentialFamily
+  n = length(fx)
+  curFx = fx
+  batch = BatchFactory{SequentialScan}(size = batch_size)
+  initialize(batch, fx)
+  s = zeros(batch_size)
+  r = zeros(batch_size)
+  ŝ = zeros(batch_size)
+  r̂ = zeros(batch_size)
+  for i in 1:epoch
+    while has_next(batch)
+      cur_batch = next(batch)
+      ∇ₛₐₘₚₗₑ = grad(native_loss, curFx[cur_batch], y[cur_batch], c[cur_batch], ρ)
+      s .= (ρ₁ .* s) .+ (1 .- ρ₁) .* ∇ₛₐₘₚₗₑ
+      r .= (ρ₂ .* r) .+ (1 .- ρ₂) .* (∇ₛₐₘₚₗₑ.^2)
+      ŝ .= s ./ (1 - ρ₁^i)
+      r̂ .= r ./ (1 - ρ₂^i)
+      # @show(r̂)
+      curFx[cur_batch] = curFx[cur_batch] - α ./ sqrt.(r̂) .* ŝ
+     end
+    # @show(Concepts.evaluate(native_loss,curFx,y,c,ρ))
+    reset(batch)
+  end
+  return curFx
+end
 
 
 
-end # end of Loss
+
+function sgd_subgrad_train(native_loss::Loss{T};
+                   fx, y, c, ρ, α, ρ₁, ρ₂, batch_size, epoch) where T<:ExponentialFamily
+  n = length(fx)
+  curFx = fx
+  batch = BatchFactory{SequentialScan}(size = batch_size)
+  initialize(batch, fx)
+  s = zeros(batch_size)
+  r = zeros(batch_size)
+  ŝ = zeros(batch_size)
+  r̂ = zeros(batch_size)
+  for i in 1:epoch
+    while has_next(batch)
+      cur_batch = next(batch)
+      ∇ₛₐₘₚₗₑ = subgrad(native_loss, curFx[cur_batch], y[cur_batch], c[cur_batch], ρ)
+      s .= (ρ₁ .* s) .+ (1 .- ρ₁) .* ∇ₛₐₘₚₗₑ
+      r .= (ρ₂ .* r) .+ (1 .- ρ₂) .* (∇ₛₐₘₚₗₑ.^2)
+      ŝ .= s ./ (1 - ρ₁^i)
+      r̂ .= r ./ (1 - ρ₂^i)
+      # @show(r̂)
+      curFx[cur_batch] = curFx[cur_batch] - α ./ sqrt.(r̂) .* ŝ
+     end
+    # @show(Concepts.evaluate(native_loss,curFx,y,c,ρ))
+    reset(batch)
+  end
+  return curFx
+end
+
+
+
+end

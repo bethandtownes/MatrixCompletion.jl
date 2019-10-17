@@ -129,6 +129,7 @@ function Concepts.check(object::Union{Type{Val{:Bernoulli}},
 end
 
 
+
 @overload
 function Concepts.check(object::Union{Type{Val{:NegativeBinomial}},
                                       Type{AbstractNegativeBinomial},

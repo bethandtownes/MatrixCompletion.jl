@@ -20,6 +20,9 @@ include("./FastEigen.jl")
 include("./RandomMatrices.jl")
 include("./Indexing.jl")
 include("./Sampling.jl")
+include("./BatchUtils.jl")
+include("./PrettyPrinter.jl")
+
 
 # include("./TestModule.jl")
 

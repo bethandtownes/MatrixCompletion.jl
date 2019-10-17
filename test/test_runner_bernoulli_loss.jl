@@ -12,7 +12,7 @@ end
                 if result["relative-error[#within-radius(1e-5)]"] < 0.1
                     return true
                 end
-                @warn @sprintf("expected %f, got %f",0.1,result["relative-error[#within-radius(1e-5)]"])
+                @warn @sprintf("expected %f, got %f", 0.1, result["relative-error[#within-radius(1e-5)]"])
                 return false
             end
             @test !isnothing(provide(Loss(Bernoulli())))
@@ -179,4 +179,8 @@ end
                                                     max_iter           = 100))
     end
 end
+
+
+
+
 

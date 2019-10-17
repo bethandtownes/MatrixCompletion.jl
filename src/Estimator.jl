@@ -20,6 +20,20 @@ struct MLE{T<:Any} <:Concepts.AbstractEstimator
     end
 end
 
+## not super important
+struct MOM{T<:Any} <:Concepts.AbstractEstimator
+    of::T 
+    function MOM{T}() where T<:Any
+        return new{T}()
+    end
+
+    function MOM{T}(of::T) where T<:Any
+        return new{T}(of)
+    end
+end
+
+
+
 struct ProfileLikelihood <: EstimationProcedure{MLE} end
 
 const MLE(of::Union{T,Symbol}) where T<:Any =

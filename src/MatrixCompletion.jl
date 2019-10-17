@@ -42,6 +42,9 @@ include("./Library/MathLib.jl")
 
 
 
+@api BatchFactory     Utilities.BatchUtils.BatchFactory
+@api BatchingStrategy Utilities.BatchUtils.BatchingStrategy
+@api SequentialScan   Utilities.BatchUtils.SequentialScan
 
 
 @api MaybeMissing               Concepts.MaybeMissing
