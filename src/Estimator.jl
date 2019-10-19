@@ -2,8 +2,10 @@ module Estimator
 
 using ..Concepts
 
-import Distributions
 
+
+import Distributions
+import StatsBase
 
 abstract type EstimationProcedure{T<:Any} end
 
@@ -33,19 +35,31 @@ struct MOM{T<:Any} <:Concepts.AbstractEstimator
 end
 
 
-
 struct ProfileLikelihood <: EstimationProcedure{MLE} end
+
+
+function Concepts.estimator(name::MOM{AbstractNegativeBinomial}, data::AutoboxedArray{T}) where T<:Real
+  EX = StatsBase.mean(data)
+  VarX = StatsBase.var(data)
+  pₘₒₘ = EX / VarX
+  rₘₒₘ = EX * (pₘₒₘ) / (1 - pₘₒₘ)
+  return Dict{Symbol, Float64}(:p => pₘₒₘ, :r => rₘₒₘ)
+end
+                            
+
+
 
 const MLE(of::Union{T,Symbol}) where T<:Any =
     !isa(of,Symbol) ? MLE{T}(of) : MLE(convert(of))
 
 export MLE,
-    ProfileLikelihood
+  ProfileLikelihood,
+  MOM
 
 
 
 @overload
-function Concepts.estimator(name::MLE{AbstractGaussian},data::AutoboxedArray{T};
+function Concepts.estimator(name::MLE{AbstractGaussian}, data::AutoboxedArray{T};
                             method::EstimationProcedure{MLE} = ProfileLikelihood()) where T<:Real
 
     if method == ProfileLikelihood()

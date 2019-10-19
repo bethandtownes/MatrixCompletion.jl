@@ -37,15 +37,16 @@ const FLAG_TEST_INDEXING_TOOLS                   = false
 const FLAG_TEST_SPARSE_EIGEN                     = false
 const FLAG_TEST_BETTER_MGF                       = false
 const FLAG_TEST_ESTIMATOR_MLE                    = false
+const FLAG_TEST_ESTIMATOR_MOM                    = false
 const FLAG_TEST_MODEL_FITTING                    = false
 
 const FLAG_TEST_LOSS_OPTIMIZER_POISSON           = false
 const FLAG_TEST_LOSS_OPTIMIZER_BERNOULLI         = false
 const FLAG_TEST_LOSS_OPTIMIZER_GAMMA             = false
 const FLAG_TEST_LOSS_OPTIMIZER_GAUSSIAN          = false
-const FLAG_TEST_LOSS_OPTIMIZER_NEGATIVE_BINOMIAL = false
+const FLAG_TEST_LOSS_OPTIMIZER_NEGATIVE_BINOMIAL = true
 const FLAG_TEST_LOSS_OPTIMIZER_MULTINOMIAL       = false
-const FLAG_TEST_ALGO_ADMM                        = true
+const FLAG_TEST_ALGO_ADMM                        = false
 const FLAG_TEST_LIB_MATH                         = false
 const FLAG_TEST_PRETTY_PRINTER                   = false
 const FLAG_TEST_UTILITY_BATCHUTILS               = false
@@ -99,6 +100,9 @@ FLAG_TEST_BETTER_MGF ?
 FLAG_TEST_ESTIMATOR_MLE ?
   include("test_runner_estimator_mle.jl")      : @info @sprintf("Skipped: MLE Test\n")
 
+FLAG_TEST_ESTIMATOR_MOM ?
+  include("test_runner_estimator_mom.jl")      : @info @sprintf("Skipped: MOM Test\n")
+
 FLAG_TEST_MODEL_FITTING ?
   include("test_runner_model_fitting.jl")      : @info @sprintf("Skipped: Model Fitting Test\n")
 
@@ -109,7 +113,10 @@ FLAG_TEST_LOSS_OPTIMIZER_BERNOULLI ?
   include("test_runner_bernoulli_loss.jl")     : @info @sprintf("Skipped: Bernoulli Loss Test\n")
 
 FLAG_TEST_LOSS_OPTIMIZER_GAMMA ?
-  include("test_runner_gamma_loss.jl")         : @info @sprintf("Skipped: Bernoulli Loss Test\n")
+  include("test_runner_gamma_loss.jl")         : @info @sprintf("Skipped: Gamma Loss Test\n")
+
+FLAG_TEST_LOSS_OPTIMIZER_NEGATIVE_BINOMIAL ?
+  include("test_runner_negative_binomial_loss.jl") : @info @sprintf("Skipped: Bernoulli Loss Test\n")
 
 FLAG_TEST_ALGO_ADMM ?
   include("test_runner_admm_small_input.jl")   : @info @sprintf("Skipped: ADMM Small Input Test\n")

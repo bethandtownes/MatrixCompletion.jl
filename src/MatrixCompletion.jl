@@ -106,7 +106,7 @@ include("./Library/MathLib.jl")
 #@api EstimationProcedure    Estimator.EstimationProcedure
 @api ProfileLikelihood       Estimator.ProfileLikelihood
 @api MLE                     Estimator.MLE
-
+@api MOM                     Estimator.MOM
 
 
 #==============================================================================#
