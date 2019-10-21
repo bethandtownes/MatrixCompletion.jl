@@ -73,12 +73,10 @@ function Base.size(object::IndexTracker)
   return object.dimension
 end
 
-
 @overload
 function Concepts.provide(object::IndexTracker{T}, data::Vararg{Array{T}}) where T<:Any
     return IndexTracker{T}(data);
 end
-
 
 @overload
 function Concepts.groupby(obj::IndexTracker{T}, list::Array{T}) where T<:Any
@@ -91,7 +89,6 @@ function Concepts.groupby(obj::IndexTracker{T}, list::Array{T}) where T<:Any
     end
     return result
 end
-
 
 @overload
 function Base.convert(::Type{Array{<:CartesianIndex}}, x::Union{Array{Int64, 1}, Array{CartesianIndex}})

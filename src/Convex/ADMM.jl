@@ -3,23 +3,17 @@ module ADMM
 using Printf
 using LinearAlgebra
 using SparseArrays
-
-
-
+using ..Estimator
 using ..Concepts
 using ..ModelFitting
 using ..Utilities
 using ..Utilities.FastEigen
 using ..Utilities.PrettyPrinter
 using ..Losses
-
 using ..MathLib
+
 import  StatsBase
-
-
 import LinearAlgebra:norm
-
-
 
 export complete
 
@@ -101,6 +95,102 @@ function initialize_warmup(tracker, A)
   return warmup
 end
 
+@private
+function ensure_feasible_data_type(set_of_types)
+  if issubset(set_of_types, Set([:Gaussian,
+                                 :Poisson,
+                                 :NegativeBinomial,
+                                 :Gamma,
+                                 :Bernoulli]))
+    @error("Unrecognized data type.")
+    return nothing
+  end
+end
+
+
+@private
+function ensure_valid_param_estimates(::Type{Val{:Gaussian}}, value::T) where T
+  
+end
+
+@private
+function ensure_valid_param_estimates(::Type{Val{:Bernoulli}}, value::T) where T
+  
+end
+
+@private
+function ensure_valid_param_estimates(::Type{Val{:Gamma}}, value::T) where T
+  
+end
+
+@private
+function ensure_valid_param_estimates(::Type{Val{:Posson}}, value::T) where T
+  
+end
+
+@private
+function ensure_valid_param_estimates(::Type{Val{:NegativeBinomial}}, value::T) where T
+  
+end
+
+
+@private
+function preprocess_user_input_estimators(input::Dict{Symbol, Any})
+  ensure_feasible_data_type(keys(input))
+  processed_input = Dict{Symbol, Dict{Symbol, Any}}()
+  for dist in [:NegativeBinomial, :Gaussian, :Poisson, :Bernoulli, :Gamma]
+      processed_input[dist] = merge(processed_input[dist],
+                                    preprocess_user_input_param_estimates(Val{dist}, input[dist])) 
+  end
+  return processed_input
+end
+
+@private
+function preprocess_user_input_param_estimates(::Type{Val{:Bernoulli}}, value::Pair{Symbol, Float64})
+  if value.first != :p
+    @warn("could not find the estimate for p for Bernoulli data type, using switch to default estimation method")
+    # TODO
+  else
+    return Dict{Symbol, Pair{Symbol, Float64}}(:user_input => value)
+  end
+end
+
+@private
+function preprocess_user_input_param_estimates(::Type{Val{:Gaussian}}, value)
+  
+end
+
+@private
+function preprocess_user_input_param_estimates(::Type{Val{:Gamma}}, value)
+  
+end
+
+@private
+function preprocess_user_input_param_estimates(::Type{Val{:NegativeBinomial}}, value)
+  
+end
+
+@private
+function preprocess_user_input_param_estimates(::Type{Val{:Poisson}}, value)
+  
+end
+
+
+
+
+@private
+function initialize_estimators(tracker, A, user_input_estimators)
+  estimators = Dict{Symbol, Dict{Symbol, Any}}()
+  for sym in [:Gaussian, :Bernoulli, :Poisson, :Gamma, :NegativeBinomial]
+    estimators[sym] = Dict{Symbol, Any}()
+  end
+  if haskey(tracker, :NegativeBinomial) && length(tracker[:NegativeBinomial][:Observed]) > 0
+    estimators[:NegativeBinomial][:MOM] = estimator(MOM(),
+                                                    A[tracker[:NegativeBinomial][:Observed]])
+  end
+  return merge(estimators, preprocess_user_input_estimators(user_input_estimators))
+end
+
 @private 
 function update(::Type{Val{:Gaussian}}, A::Array{MaybeMissing{Float64}},
                 Y12::Array{Float64}, tracker::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}}, ρ::Float64)
@@ -166,6 +256,35 @@ function update(::Type{Val{:Gamma}}, A::Array{MaybeMissing{Float64}},
 end
 
 @private
+function update(::Type{Val{:NegativeBinomial}},
+                A            ::Array{MaybeMissing{Float64}},
+                Y12          ::Array{Float64},
+                tracker      ::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}},
+                ρ            ::Float64,
+                gd_iter      ::Int64,
+                warmup       ::Dict{Symbol, Array{Float64}},
+                γ            ::Float64,
+                use_autodiff ::Bool,
+                estimator    ::Dict{Symbol, Any})
+  if haskey(tracker, :Gamma) && length(tracker[:Gamma][:Observed]) > 0
+    local r_est = nothing
+    if haskey(estimator, :user_input)
+      r_est = estimator[:user_input][:r]
+    else
+      r_est = estimator[:MOM][:r]
+    end
+    Y12[tracker[:Gamma][:Observed]] = negative_binomial_train(fx         = warmup[:Gamma],
+                                                              y          = A[tracker[:Gamma][:Observed]],
+                                                              c          = Y12[tracker[:Gamma][:Observed]],
+                                                              ρ          = ρ,
+                                                              iter       = gd_iter,
+                                                              γ          = 0.2,
+                                                              r_estimate = estimator[:NegativeBinomial][:MOM][:r])
+    warmup[:Gamma] = Y12[tracker[:Gamma][:Observed]]
+  end
+end
+
+@private
 function update(::Type{Val{:ρ}}, primal_feasibility::Float64, dual_feasibility::Float64, current::Float64 = nothing)
   if (primal_feasibility < 0.5 * dual_feasibility)
     return 0.7 * current
@@ -208,10 +327,11 @@ end
 function calculate_Z12_update(A, C,tracker, ρ, α, warmup, use_autodiff, gd_iter)
   d1, d2 = size(A)
   Z12 = C[1:d1, (d1+1):(d1+d2)]
-  update(:Gaussian,  A, Z12, tracker, ρ)
-  update(:Bernoulli, A, Z12, tracker, ρ, gd_iter, warmup, 0.2, use_autodiff)
-  update(:Poisson,   A, Z12, tracker, ρ, gd_iter, warmup, 0.05, use_autodiff)
-  update(:Gamma,     A, Z12, tracker, ρ, gd_iter, warmup, 0.005, use_autodiff)
+  update(:Gaussian,         A, Z12, tracker, ρ)
+  update(:Bernoulli,        A, Z12, tracker, ρ, gd_iter, warmup, 0.2,   use_autodiff)
+  update(:Poisson,          A, Z12, tracker, ρ, gd_iter, warmup, 0.05,  use_autodiff)
+  update(:Gamma,            A, Z12, tracker, ρ, gd_iter, warmup, 0.005, use_autodiff)
+  update(:NegativeBinomial, A, Z12, tracker, ρ, gd_iter, warmup, 0.005, use_autodiff, estimators)
   project!(ClosedInterval{Float64}(-α, α), Z12)
   return Z12
 end
@@ -255,8 +375,6 @@ end
 
 @private
 function print_optimization_log(iter,A, X, Z, Z12, W, II, Rp, Rd, ρ, λ, μ, tracker)
-
-  
   R = abs.(maximum(diag(Z)))
   local gaussian_loss = -10000000
   local bernoulli_loss = -10000000
@@ -303,7 +421,6 @@ function print_optimization_log(iter,A, X, Z, Z12, W, II, Rp, Rd, ρ, λ, μ, tr
           abs.(maximum(diag(Z)))
           ]
   new_data = map(x -> format_log_data(x) ,data)
-
   new_data[1] = string(iter)
   add_row(header_list, data=new_data)
 end
@@ -321,7 +438,8 @@ function complete(;A::Array{MaybeMissing{Float64}}   = nothing,
                   debug_mode::Bool   = false,
                   interactive_plot   = false,
                   type_assignment    = nothing,
-                  dynamic_ρ          = true)
+                  dynamic_ρ          = true,
+                  user_input_estimator = nothing)
   ensure_feasible(A)
   d1, d2                               = size(A);
   Z::Array{Float64, 2}                 = zeros(d1 + d2,  d1 + d2)
@@ -331,7 +449,11 @@ function complete(;A::Array{MaybeMissing{Float64}}   = nothing,
   Xinput::Array{Float64, 2}            = zeros(d1 + d2,  d1 + d2)
   II                                   = sparse(1.0I, d1 + d2, d1 + d2)
   tracker, type_tracker                = initialize_trackers(A, type_assignment)
+  # initialize warmup input for various gradient descent procedures
   warmup::Dict{Symbol, Array{Float64}} = initialize_warmup(tracker, A)
+  # initialize various estimators
+  estimators::Dict{Symbol, Any}        = initialize_estimators(tracker, A, user_input_estimators)
+  # print optimization path table header
   table_header(header_list)
   for iter = 1:maxiter
     @. Xinput = Z + W/ρ
@@ -358,6 +480,4 @@ function complete(;A::Array{MaybeMissing{Float64}}   = nothing,
 end
 
 end
-
-
 
