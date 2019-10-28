@@ -68,8 +68,7 @@ function Concepts.provide(object::Diagnostics{<:Any};
                                                        metric = x -> LinearAlgebra.norm(x,2)^2),
               "absolute-error[L2]" => Concepts.provide(AbsoluteError(),
                                                        input_data,reference,
-                                                       metric = x -> LinearAlgebra.norm(x,2)^2),
-              "error-matrix"       => Concepts.abs.(input_data .- reference)
+                                                       metric = x -> LinearAlgebra.norm(x,2)^2)
               )
   
 end

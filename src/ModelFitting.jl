@@ -7,11 +7,13 @@ import LinearAlgebra
 
 export DistributionDeduction
 export ObservedOrMissing
+export MatrixCompletionModel
 
 
 struct DistributionDeduction <: Concepts.AbstractModelView end
 struct ObservedOrMissing     <: Concepts.AbstractModelView end  
 
+struct MatrixCompletionModel end
 
 
 @overload
@@ -240,6 +242,38 @@ function Concepts.fit(model::ObservedOrMissing, data = Array{MaybeMissing{T}, 2}
     end
   end
   return data_view
+end
+
+@overload
+function Concepts.predict(model::MatrixCompletionModel;
+                          completed_matrix,
+                          type_tracker)
+  predicted_matrix = similar(completed_matrix)
+  for dist in setdiff(keys(type_tracker.indices), [:Missing, :Observed])
+    idx = type_tracker[convert(Symbol,dist)]
+    predicted_matrix[idx] .= predict(dist, forward_map(Val{dist}, completed_matrix[idx]))
+  end
+  return predicted_matrix
+end
+
+function Base.summary(model::MatrixCompletionModel;
+                      predicted_matrix,
+                      truth_matrix,
+                      type_tracker,
+                      tracker)
+  ret = Dict()
+  for dist in setdiff(keys(type_tracker.indices), [:Missing, :Observed])
+    summary_missing_only = provide(Diagnostics{Any}(),
+                                   reference  = truth_matrix[tracker[convert(Symbol, dist)][:Missing]],
+                                   input_data = predicted_matrix[tracker[convert(Symbol, dist)][:Missing]])
+    summary_all  = provide(Diagnostics{Any}(),
+                           reference  = truth_matrix[type_tracker[convert(Symbol, dist)]],
+                           input_data = predicted_matrix[type_tracker[convert(Symbol, dist)]])
+    ret[dist] = Dict()
+    ret[dist][:MissingOnly] = summary_missing_only
+    ret[dist][:All]         = summary_all
+  end
+  return ret
 end
 
 end

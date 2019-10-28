@@ -35,6 +35,7 @@ function Concepts.forward_map(distribution::Union{AbstractNegativeBinomial,Type{
   if !isnothing(non_canonical_parameter)
     ## TODO
   end
+  # @show(r_estimate)
   return r_estimate ./ (exp.(exp.(canonical_parameter)) .- 1)
 end
 

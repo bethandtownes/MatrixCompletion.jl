@@ -42,7 +42,10 @@ using ..Utilities.BatchUtils
 
 
 export Loss,
-  train, sgd_train, subgrad_train
+  train,
+  sgd_train,
+  subgrad_train,
+  negative_binomial_train
 
 struct Loss{T} <: AbstractLoss where T<:Any
   function Loss{T}() where T<:Any
@@ -161,7 +164,7 @@ end
 
 
 function grad(loss::Loss{AbstractGamma}, x, y, c, ρ)
-  return y .* exp.(x) .- 1 
+  return y .* exp.(x) .- 1 + (2*ρ) .* (x .- c)
 end
 
 
@@ -183,8 +186,6 @@ function grad_logistic(x,y,c,ρ)
   # return (-y .* inv_ex1 + (1 .- y) .* (ex .* inv_ex1)) .+ (2*ρ) .* (x.-c);
 end
 
-
-
 #==============================================================================#
 #                         Negative Binomial Loss                               #
 #==============================================================================#
@@ -195,6 +196,7 @@ end
 
 function Concepts.evaluate(loss::Loss{AbstractNegativeBinomial}, x, y, c, ρ; r_estimate)
   return sum(y .* exp.(x) - r_estimate .* log.(1 .- exp.(-exp.(x)))) .+ sum(ρ .* (x .- c).^2)
+  # originally it is. However, this is a constrained optimization problem.
   # return sum(-y .* x .- r_estimate .* log.(1 .- exp.(x))) + sum(ρ .* (x .- c).^2)
 end
 
@@ -240,7 +242,7 @@ function negative_binomial_train(;fx, y, c, ρ, γ=0.02, iter=20, verbose=false,
   DEBUG_MODE && @info "Gradient Descent with native differentitaion"
   curFx = fx;
   for i = 1:iter
-    @show("here")
+    # @show("here")
     curFx .-= γ * grad(Loss{AbstractNegativeBinomial}(), curFx, y, c, ρ;r_estimate = r_estimate);
     if verbose == true
       @printf("loss:%f\n", Concepts.evaluate(Loss{AbstractNegativeBinomial}(),

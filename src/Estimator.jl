@@ -7,6 +7,11 @@ using ..Concepts
 import Distributions
 import StatsBase
 
+
+export MLE,
+  ProfileLikelihood,
+  MOM
+
 abstract type EstimationProcedure{T<:Any} end
 
 
@@ -52,9 +57,7 @@ end
 const MLE(of::Union{T,Symbol}) where T<:Any =
     !isa(of,Symbol) ? MLE{T}(of) : MLE(convert(of))
 
-export MLE,
-  ProfileLikelihood,
-  MOM
+
 
 
 

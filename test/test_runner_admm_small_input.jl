@@ -9,6 +9,7 @@
 
 using LinearAlgebra
 
+
 # @testset "$(format("ADMM Algorithm: Small Input[Gaussian + Bernoulli]"))" begin
 #   let
 #     truth_matrix     = rand([(FixedRankMatrix(Distributions.Gaussian(5, 10), rank = 5), 200, 100),
@@ -162,171 +163,171 @@ end
 
 
 
-@testset "$(format("ADMM Algorithm: Small Input[Gaussian + Poisson + Bernoulli + Gamma]"))" begin
-  let
-    truth_matrix     = rand([(FixedRankMatrix(Distributions.Gaussian(5, 10), rank = 3), 400, 100),
-                             (FixedRankMatrix(Distributions.Poisson(10), rank = 3), 400, 100),
-                             (FixedRankMatrix(Distributions.Bernoulli(0.5), rank = 3), 400, 100),
-                             (FixedRankMatrix(Distributions.Gamma(10, 2), rank = 3), 400, 100)])
-    sample_model     = provide(Sampler{BernoulliModel}(), rate = 0.8)
-    input_matrix     = sample_model.draw(truth_matrix)
-    display(input_matrix)
-    completed_matrix, type_tracker = complete(A            = input_matrix,
-                                              maxiter      = 200,
-                                              ρ            = 0.3,
-                                              use_autodiff = false,
-                                              gd_iter      = 3,
-                                              debug_mode   = false)
-    predicted_poisson = predict(Poisson(),
-                                forward_map(Poisson(), completed_matrix[type_tracker[:Poisson]]))
-    truth_poisson = truth_matrix[type_tracker[:Poisson]]
-    summary_poisson = provide(Diagnostics{Any}(),
-                              reference = truth_poisson,
-                              input_data = predicted_poisson)
-    predicted_gaussian = predict(Gaussian(),
-                                 forward_map(Gaussian(), completed_matrix[type_tracker[:Gaussian]]))
-    truth_gaussian = truth_matrix[type_tracker[:Gaussian]]
-    summary_gaussian = provide(Diagnostics{Any}(),
-                               reference = truth_gaussian,
-                               input_data = predicted_gaussian)
-    predicted_gamma = predict(Gamma(),
-                              forward_map(Gamma(), completed_matrix[type_tracker[:Gamma]]))
-    truth_gamma = truth_matrix[type_tracker[:Gamma]]
-    summary_gamma = provide(Diagnostics{Any}(),
-                            reference = truth_gamma,
-                            input_data = predicted_gamma)
-    predicted_bernoulli = predict(Bernoulli(),
-                                  forward_map(Bernoulli(), completed_matrix[type_tracker[:Bernoulli]]))
-    truth_bernoulli = truth_matrix[type_tracker[:Bernoulli]]
-    summary_bernoulli = provide(Diagnostics{Any}(),
-                                reference = truth_bernoulli,
-                                input_data = predicted_bernoulli)
-    @info("Gaussian")
-    display(summary_gaussian)
-    @info("Poisson")
-    display(summary_poisson)
-    @info("Bernoulli")
-    display(summary_bernoulli)
-    @info("Gamma")
-    display(summary_gamma)
-  end
-end
+# @testset "$(format("ADMM Algorithm: Small Input[Gaussian + Poisson + Bernoulli + Gamma]"))" begin
+#   let
+#     truth_matrix     = rand([(FixedRankMatrix(Distributions.Gaussian(5, 10), rank = 3), 400, 100),
+#                              (FixedRankMatrix(Distributions.Poisson(10), rank = 3), 400, 100),
+#                              (FixedRankMatrix(Distributions.Bernoulli(0.5), rank = 3), 400, 100),
+#                              (FixedRankMatrix(Distributions.Gamma(10, 2), rank = 3), 400, 100)])
+#     sample_model     = provide(Sampler{BernoulliModel}(), rate = 0.8)
+#     input_matrix     = sample_model.draw(truth_matrix)
+#     display(input_matrix)
+#     completed_matrix, type_tracker = complete(A            = input_matrix,
+#                                               maxiter      = 200,
+#                                               ρ            = 0.3,
+#                                               use_autodiff = false,
+#                                               gd_iter      = 3,
+#                                               debug_mode   = false)
+#     predicted_poisson = predict(Poisson(),
+#                                 forward_map(Poisson(), completed_matrix[type_tracker[:Poisson]]))
+#     truth_poisson = truth_matrix[type_tracker[:Poisson]]
+#     summary_poisson = provide(Diagnostics{Any}(),
+#                               reference = truth_poisson,
+#                               input_data = predicted_poisson)
+#     predicted_gaussian = predict(Gaussian(),
+#                                  forward_map(Gaussian(), completed_matrix[type_tracker[:Gaussian]]))
+#     truth_gaussian = truth_matrix[type_tracker[:Gaussian]]
+#     summary_gaussian = provide(Diagnostics{Any}(),
+#                                reference = truth_gaussian,
+#                                input_data = predicted_gaussian)
+#     predicted_gamma = predict(Gamma(),
+#                               forward_map(Gamma(), completed_matrix[type_tracker[:Gamma]]))
+#     truth_gamma = truth_matrix[type_tracker[:Gamma]]
+#     summary_gamma = provide(Diagnostics{Any}(),
+#                             reference = truth_gamma,
+#                             input_data = predicted_gamma)
+#     predicted_bernoulli = predict(Bernoulli(),
+#                                   forward_map(Bernoulli(), completed_matrix[type_tracker[:Bernoulli]]))
+#     truth_bernoulli = truth_matrix[type_tracker[:Bernoulli]]
+#     summary_bernoulli = provide(Diagnostics{Any}(),
+#                                 reference = truth_bernoulli,
+#                                 input_data = predicted_bernoulli)
+#     @info("Gaussian")
+#     display(summary_gaussian)
+#     @info("Poisson")
+#     display(summary_poisson)
+#     @info("Bernoulli")
+#     display(summary_bernoulli)
+#     @info("Gamma")
+#     display(summary_gamma)
+#   end
+# end
 
-# 1. rectangular matrices sufficient condition
-# 2. big scale simulation
-# 3. fix the small dimension
-# 4. time performance
-# 5. beroulli / uniform
-# 6. weighted missing pattern
+# # 1. rectangular matrices sufficient condition
+# # 2. big scale simulation
+# # 3. fix the small dimension
+# # 4. time performance
+# # 5. beroulli / uniform
+# # 6. weighted missing pattern
 
-@testset "$(format("ADMM Algorithm: Small Input[Gaussian + Poisson + Bernoulli + Gamma]"))" begin
-  let
-    truth_matrix     = rand([(FixedRankMatrix(Distributions.Gaussian(5, 10), rank = 4), 400, 15),
-                             (FixedRankMatrix(Distributions.Poisson(10), rank = 4), 400, 15),
-                             (FixedRankMatrix(Distributions.Bernoulli(0.5), rank = 4), 400, 15),
-                             (FixedRankMatrix(Distributions.Gamma(10, 2), rank = 4), 400, 15)])
-    sample_model     = provide(Sampler{BernoulliModel}(), rate = 0.8)
-    input_matrix     = sample_model.draw(truth_matrix)
-    display(input_matrix)
-    completed_matrix, type_tracker = complete(A            = input_matrix,
-                                              maxiter      = 200,
-                                              ρ            = 0.3,
-                                              use_autodiff = false,
-                                              gd_iter      = 10,
-                                              debug_mode   = false)
-    predicted_poisson = predict(Poisson(),
-                                forward_map(Poisson(), completed_matrix[type_tracker[:Poisson]]))
-    truth_poisson = truth_matrix[type_tracker[:Poisson]]
-    summary_poisson = provide(Diagnostics{Any}(),
-                              reference = truth_poisson,
-                              input_data = predicted_poisson)
-    predicted_gaussian = predict(Gaussian(),
-                                 forward_map(Gaussian(), completed_matrix[type_tracker[:Gaussian]]))
-    truth_gaussian = truth_matrix[type_tracker[:Gaussian]]
-    summary_gaussian = provide(Diagnostics{Any}(),
-                               reference = truth_gaussian,
-                               input_data = predicted_gaussian)
-    predicted_gamma = predict(Gamma(),
-                              forward_map(Gamma(), completed_matrix[type_tracker[:Gamma]]))
-    truth_gamma = truth_matrix[type_tracker[:Gamma]]
-    summary_gamma = provide(Diagnostics{Any}(),
-                            reference = truth_gamma,
-                            input_data = predicted_gamma)
-    predicted_bernoulli = predict(Bernoulli(),
-                                  forward_map(Bernoulli(), completed_matrix[type_tracker[:Bernoulli]]))
-    truth_bernoulli = truth_matrix[type_tracker[:Bernoulli]]
-    summary_bernoulli = provide(Diagnostics{Any}(),
-                                reference = truth_bernoulli,
-                                input_data = predicted_bernoulli)
-    @info("Gaussian")
-    display(summary_gaussian)
-    @info("Poisson")
-    display(summary_poisson)
-    @info("Bernoulli")
-    display(summary_bernoulli)
-    @info("Gamma")
-    display(summary_gamma)
-  end
-end
+# @testset "$(format("ADMM Algorithm: Small Input[Gaussian + Poisson + Bernoulli + Gamma]"))" begin
+#   let
+#     truth_matrix     = rand([(FixedRankMatrix(Distributions.Gaussian(5, 10), rank = 4), 400, 15),
+#                              (FixedRankMatrix(Distributions.Poisson(10), rank = 4), 400, 15),
+#                              (FixedRankMatrix(Distributions.Bernoulli(0.5), rank = 4), 400, 15),
+#                              (FixedRankMatrix(Distributions.Gamma(10, 2), rank = 4), 400, 15)])
+#     sample_model     = provide(Sampler{BernoulliModel}(), rate = 0.8)
+#     input_matrix     = sample_model.draw(truth_matrix)
+#     display(input_matrix)
+#     completed_matrix, type_tracker = complete(A            = input_matrix,
+#                                               maxiter      = 200,
+#                                               ρ            = 0.3,
+#                                               use_autodiff = false,
+#                                               gd_iter      = 10,
+#                                               debug_mode   = false)
+#     predicted_poisson = predict(Poisson(),
+#                                 forward_map(Poisson(), completed_matrix[type_tracker[:Poisson]]))
+#     truth_poisson = truth_matrix[type_tracker[:Poisson]]
+#     summary_poisson = provide(Diagnostics{Any}(),
+#                               reference = truth_poisson,
+#                               input_data = predicted_poisson)
+#     predicted_gaussian = predict(Gaussian(),
+#                                  forward_map(Gaussian(), completed_matrix[type_tracker[:Gaussian]]))
+#     truth_gaussian = truth_matrix[type_tracker[:Gaussian]]
+#     summary_gaussian = provide(Diagnostics{Any}(),
+#                                reference = truth_gaussian,
+#                                input_data = predicted_gaussian)
+#     predicted_gamma = predict(Gamma(),
+#                               forward_map(Gamma(), completed_matrix[type_tracker[:Gamma]]))
+#     truth_gamma = truth_matrix[type_tracker[:Gamma]]
+#     summary_gamma = provide(Diagnostics{Any}(),
+#                             reference = truth_gamma,
+#                             input_data = predicted_gamma)
+#     predicted_bernoulli = predict(Bernoulli(),
+#                                   forward_map(Bernoulli(), completed_matrix[type_tracker[:Bernoulli]]))
+#     truth_bernoulli = truth_matrix[type_tracker[:Bernoulli]]
+#     summary_bernoulli = provide(Diagnostics{Any}(),
+#                                 reference = truth_bernoulli,
+#                                 input_data = predicted_bernoulli)
+#     @info("Gaussian")
+#     display(summary_gaussian)
+#     @info("Poisson")
+#     display(summary_poisson)
+#     @info("Bernoulli")
+#     display(summary_bernoulli)
+#     @info("Gamma")
+#     display(summary_gamma)
+#   end
+# end
 
 
 
-@testset "$(format("ADMM Algorithm: Medium Input[Gaussian + Poisson + Bernoulli + Gamma]"))" begin
-  let
-    truth_matrix     = rand([(FixedRankMatrix(Distributions.Gaussian(5, 10), rank = 3), 1600, 400),
-                             (FixedRankMatrix(Distributions.Poisson(10), rank = 3), 1600, 400),
-                             (FixedRankMatrix(Distributions.Bernoulli(0.5), rank = 3), 1600, 400),
-                             (FixedRankMatrix(Distributions.Gamma(10, 2), rank = 3), 1600, 400)])
-    sample_model     = provide(Sampler{BernoulliModel}(), rate = 0.8)
-    input_matrix     = sample_model.draw(truth_matrix)
-    display(input_matrix)
-    manual_type_input = Array{Symbol}(undef, 1600, 1600)
-    manual_type_input[:, 1:400]     .= :Gaussian
-    manual_type_input[:, 401:800]   .= :Poisson
-    manual_type_input[:, 801:1200]  .= :Bernoulli
-    manual_type_input[:, 1201:1600] .= :Gamma
-    completed_matrix, type_tracker = complete(A            = input_matrix,
-                                              maxiter      = 200,
-                                              ρ            = 0.3,
-                                              use_autodiff = false,
-                                              gd_iter      = 3,
-                                              debug_mode   = false,
-                                              type_assignment = manual_type_input)
+# @testset "$(format("ADMM Algorithm: Medium Input[Gaussian + Poisson + Bernoulli + Gamma]"))" begin
+#   let
+#     truth_matrix     = rand([(FixedRankMatrix(Distributions.Gaussian(5, 10), rank = 3), 1600, 400),
+#                              (FixedRankMatrix(Distributions.Poisson(10), rank = 3), 1600, 400),
+#                              (FixedRankMatrix(Distributions.Bernoulli(0.5), rank = 3), 1600, 400),
+#                              (FixedRankMatrix(Distributions.Gamma(10, 2), rank = 3), 1600, 400)])
+#     sample_model     = provide(Sampler{BernoulliModel}(), rate = 0.8)
+#     input_matrix     = sample_model.draw(truth_matrix)
+#     display(input_matrix)
+#     manual_type_input = Array{Symbol}(undef, 1600, 1600)
+#     manual_type_input[:, 1:400]     .= :Gaussian
+#     manual_type_input[:, 401:800]   .= :Poisson
+#     manual_type_input[:, 801:1200]  .= :Bernoulli
+#     manual_type_input[:, 1201:1600] .= :Gamma
+#     completed_matrix, type_tracker = complete(A            = input_matrix,
+#                                               maxiter      = 200,
+#                                               ρ            = 0.3,
+#                                               use_autodiff = false,
+#                                               gd_iter      = 3,
+#                                               debug_mode   = false,
+#                                               type_assignment = manual_type_input)
 
-    predicted_poisson = predict(Poisson(),
-                                forward_map(Poisson(), completed_matrix[type_tracker[:Poisson]]))
-    truth_poisson = truth_matrix[type_tracker[:Poisson]]
-    summary_poisson = provide(Diagnostics{Any}(),
-                              reference = truth_poisson,
-                              input_data = predicted_poisson)
-    predicted_gaussian = predict(Gaussian(),
-                                 forward_map(Gaussian(), completed_matrix[type_tracker[:Gaussian]]))
-    truth_gaussian = truth_matrix[type_tracker[:Gaussian]]
-    summary_gaussian = provide(Diagnostics{Any}(),
-                               reference = truth_gaussian,
-                               input_data = predicted_gaussian)
-    predicted_gamma = predict(Gamma(),
-                              forward_map(Gamma(), completed_matrix[type_tracker[:Gamma]]))
-    truth_gamma = truth_matrix[type_tracker[:Gamma]]
-    summary_gamma = provide(Diagnostics{Any}(),
-                            reference = truth_gamma,
-                            input_data = predicted_gamma)
-    predicted_bernoulli = predict(Bernoulli(),
-                                  forward_map(Bernoulli(), completed_matrix[type_tracker[:Bernoulli]]))
-    truth_bernoulli = truth_matrix[type_tracker[:Bernoulli]]
-    summary_bernoulli = provide(Diagnostics{Any}(),
-                                reference = truth_bernoulli,
-                                input_data = predicted_bernoulli)
-    @info("Gaussian")
-    display(summary_gaussian)
-    @info("Poisson")
-    display(summary_poisson)
-    @info("Bernoulli")
-    display(summary_bernoulli)
-    @info("Gamma")
-    display(summary_gamma)
-  end
-end
+#     predicted_poisson = predict(Poisson(),
+#                                 forward_map(Poisson(), completed_matrix[type_tracker[:Poisson]]))
+#     truth_poisson = truth_matrix[type_tracker[:Poisson]]
+#     summary_poisson = provide(Diagnostics{Any}(),
+#                               reference = truth_poisson,
+#                               input_data = predicted_poisson)
+#     predicted_gaussian = predict(Gaussian(),
+#                                  forward_map(Gaussian(), completed_matrix[type_tracker[:Gaussian]]))
+#     truth_gaussian = truth_matrix[type_tracker[:Gaussian]]
+#     summary_gaussian = provide(Diagnostics{Any}(),
+#                                reference = truth_gaussian,
+#                                input_data = predicted_gaussian)
+#     predicted_gamma = predict(Gamma(),
+#                               forward_map(Gamma(), completed_matrix[type_tracker[:Gamma]]))
+#     truth_gamma = truth_matrix[type_tracker[:Gamma]]
+#     summary_gamma = provide(Diagnostics{Any}(),
+#                             reference = truth_gamma,
+#                             input_data = predicted_gamma)
+#     predicted_bernoulli = predict(Bernoulli(),
+#                                   forward_map(Bernoulli(), completed_matrix[type_tracker[:Bernoulli]]))
+#     truth_bernoulli = truth_matrix[type_tracker[:Bernoulli]]
+#     summary_bernoulli = provide(Diagnostics{Any}(),
+#                                 reference = truth_bernoulli,
+#                                 input_data = predicted_bernoulli)
+#     @info("Gaussian")
+#     display(summary_gaussian)
+#     @info("Poisson")
+#     display(summary_poisson)
+#     @info("Bernoulli")
+#     display(summary_bernoulli)
+#     @info("Gamma")
+#     display(summary_gamma)
+#   end
+# end
 
 
 # @testset "$(format("ADMM Algorithm: Small Input[Gamma]"))" begin
@@ -405,6 +406,13 @@ end
 #   end
 # end
 
+
+
+include("./sub_test_runner_admm_negative_binomial.jl")
+# include("./sub_test_runner_admm_bernoulli.jl")
+# include("./sub_test_runner_admm_gaussian.jl")
+# include("./sub_test_runner_admm_poisson.jl")
+# include("./sub_test_runner_admm_gamma.jl")
 
 
 # @testset "$(format("ADMM Algorithm: Small Input[Gaussian + Bernoulli, AutoDiff]"))" begin

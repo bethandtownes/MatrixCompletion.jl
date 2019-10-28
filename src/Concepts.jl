@@ -37,8 +37,6 @@ export UnrecognizedSymbolException,
     Unimplemented
 
 
-
-
 #==============================================================================#
 #                            Customized Macros                                 #
 #==============================================================================#
@@ -105,19 +103,23 @@ struct AbstractGeometric        <: ExponentialFamily   end
 
 
 export ExponentialFamily,
-    AbstractBernoulli,
-    AbstractBinomial,
-    AbstractGaussian,
-    AbstractGamma,
-    AbstractExponential,
-    AbstractNegativeBinomial,
-    AbstractPoisson
+  AbstractBernoulli,
+  AbstractBinomial,
+  AbstractGaussian,
+  AbstractGamma,
+  AbstractExponential,
+  AbstractNegativeBinomial,
+  AbstractPoisson,
+  forward_map
+  
 
 
 
-function forward_map(distribution::T,args...;kwargs...) where T<:Any
-    throw(NotOverLoadedException("forward_map"))
-end
+function forward_map() end
+
+# function forward_map(distribution::T, args...;kwargs...) where T<:Any
+#     throw(NotOverLoadedException("forward_map"))
+# end
 
 #------------------------------------------------------------------------------#
 struct Diagnostics{T<:Any} end
@@ -426,7 +428,7 @@ end
 
 # emacs indentation BUGGGGGGGGGG
 @overload
-function Base.convert(::Type{ExponentialFamily},x::Symbol)
+function Base.convert(::Type{ExponentialFamily}, x::Symbol)
     if x == :Poisson || x == :Count
         return AbstractPoisson()
     end
@@ -443,6 +445,25 @@ function Base.convert(::Type{ExponentialFamily},x::Symbol)
         return AbstractNegativeBinomial()
     end
     throw(InexactError())
+end
+
+@overload
+function Base.convert(::Type{Symbol}, x::ExponentialFamily)
+  if x == AbstractPoisson()
+    return :Poisson
+  end
+  if x == AbstractGaussian()
+    return :Gaussian
+  end
+  if x == AbstractBernoulli()
+    return :Bernoulli
+  end
+  if x == AbstractGamma()
+    return :Gamma
+  end
+  if x == AbstractNegativeBinomial()
+    return :NegativeBinomial
+  end
 end
 
 

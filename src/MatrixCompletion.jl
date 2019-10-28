@@ -41,11 +41,12 @@ include("./Library/MathLib.jl")
 
 
 
+@api MatrixCompletionModel ModelFitting.MatrixCompletionModel
+
 
 @api BatchFactory     Utilities.BatchUtils.BatchFactory
 @api BatchingStrategy Utilities.BatchUtils.BatchingStrategy
 @api SequentialScan   Utilities.BatchUtils.SequentialScan
-
 
 @api MaybeMissing               Concepts.MaybeMissing
 @api VecOrMatOf                 Concepts.VecOrMatOf

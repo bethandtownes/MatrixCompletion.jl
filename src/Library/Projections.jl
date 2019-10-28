@@ -1,4 +1,3 @@
-
 using .MathLibSignatures
 using ..Utilities.FastEigen
 
@@ -9,7 +8,7 @@ function MathLibSignatures.project(to::SemidefiniteCone, mat::Array{Float64, 2};
                                    eigs_implementation = KrylovMethods())
   if isnothing(rank(to))
     # do a full projection
-    @warn("Doing full eigen projection, could be costly!")
+    # @warn("Doing full eigen projection, could be costly!")
     eigDecomposition    = eigen(mat);
     posEigenValuesIndex = findall(x -> x>0,eigDecomposition.values);
     posEigenValues      = eigDecomposition.values[posEigenValuesIndex];
@@ -19,6 +18,7 @@ function MathLibSignatures.project(to::SemidefiniteCone, mat::Array{Float64, 2};
   end
   # we are computing the full projection
   Λ, X = eigs(eigs_implementation, mat, nev = to.rank)
+  # return X * diagm(0 => Λ) * X' 
   id = findall(x -> x > 0, Λ)
   return X[:, id] * diagm(0 => Λ[id]) * (X[:,id])' 
 end
@@ -31,8 +31,3 @@ function MathLibSignatures.project!(to::ClosedInterval, x::Array{Float64})
   @. x = max.(to.ll, min.(x, to.rr))
 end
 
-
-
-
-
-  

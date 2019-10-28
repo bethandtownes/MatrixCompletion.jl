@@ -68,8 +68,17 @@ struct KrylovMethods end
 
 
 
-function eigs(algorithm::KrylovMethods, x::Array{Float64, 2}; nev::Int64 = 10, order::Symbol = :LR, symmetric::Bool = true)
-  λ, X = KrylovKit.eigsolve(x, nev, order;issymmetric = symmetric)
+function eigs(algorithm::KrylovMethods, x::Array{Float64, 2};
+              nev::Int64      = 10,
+              order::Symbol   = :LR,
+              symmetric::Bool = true,
+              maxiter::Int64  = 100)
+  local λ, X
+  if nev <= 20
+    λ, X = KrylovKit.eigsolve(x, nev, order;issymmetric = symmetric)
+  else
+    λ, X = KrylovKit.eigsolve(x, nev, order;issymmetric = symmetric, krylovdim = nev + 5, maxiter = maxiter)
+  end
   X = hcat(X...)
   return λ[1:nev], X[:, 1:nev]
 end
@@ -94,7 +103,7 @@ end
 
 
 function eigs(algorithm::NativeLOBPCG,x::Array{Float64,2};
-              nev::Integer=6,eigen_vectors::Bool=true,order::Symbol=:LR) 
+              nev::Integer=6,eigen_vectors::Bool=true, order::Symbol=:LR) 
   local eigen_decomp;
   if order == :LR
     eigen_decomp = IterativeSolvers.lobpcg(x,true, nev);

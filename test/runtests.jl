@@ -44,7 +44,7 @@ const FLAG_TEST_LOSS_OPTIMIZER_POISSON           = false
 const FLAG_TEST_LOSS_OPTIMIZER_BERNOULLI         = false
 const FLAG_TEST_LOSS_OPTIMIZER_GAMMA             = false
 const FLAG_TEST_LOSS_OPTIMIZER_GAUSSIAN          = false
-const FLAG_TEST_LOSS_OPTIMIZER_NEGATIVE_BINOMIAL = true
+const FLAG_TEST_LOSS_OPTIMIZER_NEGATIVE_BINOMIAL = false
 const FLAG_TEST_LOSS_OPTIMIZER_MULTINOMIAL       = false
 const FLAG_TEST_ALGO_ADMM                        = false
 const FLAG_TEST_LIB_MATH                         = false
@@ -61,9 +61,46 @@ const FLAG_TEST_ALGO_OPTSPACE                    = false
 
 
 #==============================================================================#
+#                             SIMULATION FLAGS                                 #
+#==============================================================================#
+const FLAG_SIMULATION_ADMM_GAMMA                 = false
+const FLAG_SIMULATION_ADMM_BERNOULLI             = true
+const FLAG_SIMULATION_ADMM_GAUSSIAN              = false
+const FLAG_SIMULATION_ADMM_POISSON               = false
+const FLAG_SIMULATION_ADMM_GAUSSIAN_BERNOULLI    = false
+
+
+#==============================================================================#
 #                             VISUALIZATION FLAGS                              #
 #==============================================================================#
 const FLAG_VISUAL_RANDOM_OBJECTS = false
+
+
+
+
+#==============================================================================#
+#                             SIMULATION SCRIPTS                               #
+#==============================================================================#
+FLAG_SIMULATION_ADMM_GAMMA ?
+  include("simulation_runner_gamma.jl")              : @info @sprintf("Skipped: Simulation[vary rank] Gamma")
+
+FLAG_SIMULATION_ADMM_BERNOULLI ?
+  include("simulation_runner_bernoulli.jl")          : @info @sprintf("Skipped: Simulation[vary rank] Bernoulli")
+
+FLAG_SIMULATION_ADMM_GAUSSIAN ?
+  include("simulation_runner_gaussian.jl")           : @info @sprintf("Skipped: Simulation[vary rank] Gaussian")
+
+FLAG_SIMULATION_ADMM_POISSON ?
+  include("simulation_runner_poisson.jl")            : @info @sprintf("Skipped: Simulation[vary rank] Poisson")
+
+# FLAG_SIMULATION_ADMM_NEGATIVE_BINOMIAL ?
+#   include("simulation_runner_negbin.jl")             : @info @sprintf("Skipped: Simulation[vary rank] NegativeBinomial")
+
+
+FLAG_SIMULATION_ADMM_GAUSSIAN_BERNOULLI ?
+  include("simulation_runner_gaussian_bernoulli.jl") : @info @sprintf("Skipped: Simulation Gaussian + Bernoulli")
+
+
 
 
 
