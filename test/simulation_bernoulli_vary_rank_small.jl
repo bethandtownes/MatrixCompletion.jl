@@ -4,7 +4,7 @@ let
   Random.seed!(65536)
   ROW = 400
   COL = 400
-  for input_rank in collect(1:400)
+  for input_rank in collect(277:400)
     @printf("small case: rank = %d\n", input_rank)
     dist = Bernoulli()
     timer = TimerOutput()
@@ -28,7 +28,7 @@ let
                                                          use_autodiff    = false,
                                                          gd_iter         = 3,
                                                          debug_mode      = false,
-                                                         project_rank    = input_rank,
+                                                         project_rank    = nothing,
                                                          io              = io,
                                                          type_assignment = manual_type_matrix)
     end
@@ -48,8 +48,6 @@ let
            "predicted_matrix" => predicted_matrix,
            "truth_matrix"     => truth_matrix,
            "summary"          => summary_object)
-
-
     log_simulation_result(Bernoulli(), completed_matrix, truth_matrix, type_tracker,tracker, io = io)
     print(io, JSON.json(summary_object, 4))
     print(io, timer)

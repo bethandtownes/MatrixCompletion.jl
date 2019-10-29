@@ -247,15 +247,22 @@ end
 @overload
 function Concepts.predict(model::MatrixCompletionModel;
                           completed_matrix,
-                          type_tracker)
+                          type_tracker,
+                          estimators = nothing)
   predicted_matrix = similar(completed_matrix)
   for dist in setdiff(keys(type_tracker.indices), [:Missing, :Observed])
     idx = type_tracker[convert(Symbol,dist)]
-    predicted_matrix[idx] .= predict(dist, forward_map(Val{dist}, completed_matrix[idx]))
+    if convert(Symbol, dist) != :NegativeBinomial
+      predicted_matrix[idx] .= predict(dist, forward_map(Val{dist}, completed_matrix[idx]))
+    else
+      predicted_matrix[idx] .= predict(dist, forward_map(Val{dist}, completed_matrix[idx],
+                                                         r_estimate = estimators[:NegativeBinomial][:r]))
+    end
   end
   return predicted_matrix
 end
 
+@overload
 function Base.summary(model::MatrixCompletionModel;
                       predicted_matrix,
                       truth_matrix,

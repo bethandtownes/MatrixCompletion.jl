@@ -64,10 +64,12 @@ const FLAG_TEST_ALGO_OPTSPACE                    = false
 #                             SIMULATION FLAGS                                 #
 #==============================================================================#
 const FLAG_SIMULATION_ADMM_GAMMA                 = false
-const FLAG_SIMULATION_ADMM_BERNOULLI             = true
+const FLAG_SIMULATION_ADMM_BERNOULLI             = false
 const FLAG_SIMULATION_ADMM_GAUSSIAN              = false
 const FLAG_SIMULATION_ADMM_POISSON               = false
 const FLAG_SIMULATION_ADMM_GAUSSIAN_BERNOULLI    = false
+const FLAG_SIMULATION_ADMM_NEGATIVE_BINOMIAL     = true
+
 
 
 #==============================================================================#
@@ -93,9 +95,8 @@ FLAG_SIMULATION_ADMM_GAUSSIAN ?
 FLAG_SIMULATION_ADMM_POISSON ?
   include("simulation_runner_poisson.jl")            : @info @sprintf("Skipped: Simulation[vary rank] Poisson")
 
-# FLAG_SIMULATION_ADMM_NEGATIVE_BINOMIAL ?
-#   include("simulation_runner_negbin.jl")             : @info @sprintf("Skipped: Simulation[vary rank] NegativeBinomial")
-
+FLAG_SIMULATION_ADMM_NEGATIVE_BINOMIAL ?
+  include("simulation_runner_negbin.jl")             : @info @sprintf("Skipped: Simulation[vary rank] NegativeBinomial")
 
 FLAG_SIMULATION_ADMM_GAUSSIAN_BERNOULLI ?
   include("simulation_runner_gaussian_bernoulli.jl") : @info @sprintf("Skipped: Simulation Gaussian + Bernoulli")
