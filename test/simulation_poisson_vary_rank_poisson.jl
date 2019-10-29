@@ -2,13 +2,13 @@
 
 let
   Random.seed!(65536)
-  ROW = 400
-  COL = 400
-  for input_rank in collect(1:400)
-    @printf("small case: rank = %d\n", input_rank)
+  ROW = 2000
+  COL = 2000
+  for input_rank in union(1, collect(10:10:500))
+    @printf("medium case: rank = %d\n", input_rank)
     dist = Poisson()
     timer = TimerOutput()
-    RESULTS_DIR    = GLOBAL_SIMULATION_RESULTS_DIR * "poisson/small(400x400)(vary_rank)/" * "rank" * string(input_rank) * "/"
+    RESULTS_DIR    = GLOBAL_SIMULATION_RESULTS_DIR * "poisson/medium(400x400)(vary_rank)/" * "rank" * string(input_rank) * "/"
     LOG_FILE_NAME  = "io.log"
     DATA_FILE_NAME = "saved_variables.h5"
     LOG_FILE_PATH  = RESULTS_DIR * LOG_FILE_NAME
@@ -21,7 +21,7 @@ let
     manual_type_matrix  = Array{Symbol}(undef, ROW, COL)
     manual_type_matrix .= :Poisson
     
-    @timeit timer  "Poisson(400x400)" * "| rank=" * string(input_rank) begin
+    @timeit timer  "Poisson(2000x2000)" * "| rank=" * string(input_rank) begin
       completed_matrix, type_tracker, tracker = complete(A               = input_matrix,
                                                          maxiter         = 200,
                                                          ρ               = 0.3,
@@ -54,4 +54,3 @@ let
     close(io)
   end
 end
-
