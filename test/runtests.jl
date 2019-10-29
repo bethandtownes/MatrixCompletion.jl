@@ -63,7 +63,10 @@ const FLAG_TEST_ALGO_OPTSPACE                    = false
 #==============================================================================#
 #                             SIMULATION FLAGS                                 #
 #==============================================================================#
-const FLAG_SIMULATION_ADMM_GAMMA                 = false
+
+const FLAG_SIMULATION_ADMM_GAMMA                 = true
+=======const FLAG_SIMULATION_ADMM_GAMMA                 = false
+>>>>>>> 7ff824b1d1994bb476576f90495cda45a50d4a3a
 const FLAG_SIMULATION_ADMM_BERNOULLI             = false
 const FLAG_SIMULATION_ADMM_GAUSSIAN              = false
 const FLAG_SIMULATION_ADMM_POISSON               = false
