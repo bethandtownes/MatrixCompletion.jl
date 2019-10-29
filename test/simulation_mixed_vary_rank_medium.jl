@@ -1,4 +1,3 @@
-
 @info("Simulation: Vary Rank [Mixed, Medium]")
 let
   Random.seed!(65536)

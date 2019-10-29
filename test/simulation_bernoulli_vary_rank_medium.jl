@@ -1,11 +1,12 @@
-@info("Simulation: Vary Rank [Bernoulli, Small]")
 
+# include("abstract_unittest_functions.jl")
+@info("Simulation: Vary Rank [Bernoulli, Medium]")
 let
   Random.seed!(65536)
   ROW = 2000
   COL = 2000
-  # for input_rank in union(1, collect(10:10:500))
-  for input_rank in collect(300:10:500)
+  for input_rank in union(1, collect(10:10:300), 480, 490, 500)
+  # for input_rank in collect(300:10:500)
     @printf("medium case: rank = %d\n", input_rank)
     dist = Bernoulli()
     timer = TimerOutput()
@@ -48,8 +49,7 @@ let
            "predicted_matrix" => predicted_matrix,
            "truth_matrix"     => truth_matrix,
            "summary"          => summary_object)
-
-    log_simulation_result(Bernoulli(), completed_matrix, truth_matrix, type_tracker,tracker, io = io)
+    # log_simulation_result(Bernoulli(), completed_matrix, truth_matrix, type_tracker,tracker, io = io)
     print(io, JSON.json(summary_object, 4))
     print(io, timer)
     close(io)
