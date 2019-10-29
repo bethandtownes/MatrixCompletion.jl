@@ -68,8 +68,8 @@ const FLAG_SIMULATION_ADMM_BERNOULLI             = false
 const FLAG_SIMULATION_ADMM_GAUSSIAN              = false
 const FLAG_SIMULATION_ADMM_POISSON               = false
 const FLAG_SIMULATION_ADMM_GAUSSIAN_BERNOULLI    = false
-const FLAG_SIMULATION_ADMM_NEGATIVE_BINOMIAL     = true
-
+const FLAG_SIMULATION_ADMM_NEGATIVE_BINOMIAL     = false
+const FLAG_SIMULATION_ADMM_MIXED                 = true
 
 
 #==============================================================================#
@@ -101,7 +101,8 @@ FLAG_SIMULATION_ADMM_NEGATIVE_BINOMIAL ?
 FLAG_SIMULATION_ADMM_GAUSSIAN_BERNOULLI ?
   include("simulation_runner_gaussian_bernoulli.jl") : @info @sprintf("Skipped: Simulation Gaussian + Bernoulli")
 
-
+FLAG_SIMULATION_ADMM_MIXED ?
+  include("simulation_runner_mixed.jl")              : @info @sprintf("Skipped: Simulation Mixed")
 
 
 
