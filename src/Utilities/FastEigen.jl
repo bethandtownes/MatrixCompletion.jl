@@ -6,7 +6,8 @@ export FortranArnoldiMethod,
   NativeLOBPCG,
   NativeArnoldiMethod,
   NativeEigen,
-  KrylovMethods
+  KrylovMethods,
+  ARPACK
 
 
 export eigs
@@ -66,6 +67,8 @@ end
 
 struct KrylovMethods end
 
+struct ARPACK end
+
 
 
 function eigs(algorithm::KrylovMethods, x::Array{Float64, 2};
@@ -84,9 +87,22 @@ function eigs(algorithm::KrylovMethods, x::Array{Float64, 2};
 end
 
 
+function eigs(algorithm::ARPACK, x::Array{Float64, 2};
+              nev::Int64      = 10,
+              order::Symbol   = :LM,
+              symmetric::Bool = true,
+              maxiter::Int64  = 100,
+              tol = 0.0)
+  local λ, X
+  λ, X = Arpack.eigs(x, nev = nev, which = order, tol = tol, maxiter = maxiter)
+  # @show(λ)
+  return λ, X
+end
+
+
 
 function eigs(algorithm::NativeEigen,x::Array{Float64,2};
-              nev::Integer=6,eigen_vectors::Bool=true,order::Symbol=:LR)
+              nev::Integer=6,eigen_vectors::Bool=true, order::Symbol=:LR)
   local eigen_val_id;
   eigen_decomp = LinearAlgebra.eigen(x);
   if order == :LR

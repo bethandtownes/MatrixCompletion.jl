@@ -4,6 +4,8 @@
 # test_native_eigen()
 
 import LinearAlgebra
+using MatrixCompletion.Utilities.FastEigen
+using Test
 
 function create_symmetric_matrix(n)
     a = rand(n,n) * 5
@@ -46,6 +48,20 @@ function test_krylov(;n = 200, nev = 20)
   @test LinearAlgebra.norm(p - p₀)^2 / LinearAlgebra.norm(p₀)^2 < 0.01
 end
 
+
+function test_arpack(;n = 200, nev = 20)
+  a = create_symmetric_matrix(n) * 5
+  @info("doing Arpack eigen")
+  # @time λ, X = eigs(ARPACK(), a, nev = nev)
+  @info("doing full eigen")
+  @time λ₀, X₀ = correct_output_sparseeigen(a, nev)
+  p = project(λ, X)
+  p₀ = project(λ₀, X₀)
+  @test LinearAlgebra.norm(p - p₀)^2 / LinearAlgebra.norm(p₀)^2 < 0.01
+end
+
+
+test_arpack(n = 4000, nev = 1000)
 
 function test_lobpcg(;dim= 2000,nev=20,repeat=5)
   input = create_symmetric_matrix(dim);

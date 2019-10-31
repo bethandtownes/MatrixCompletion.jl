@@ -27,3 +27,19 @@ end
 @time test_2();
 
 
+
+
+import Arpack
+import Random
+import KrylovKit
+
+
+
+
+a = rand(4000, 4000) * 5
+a = a + a'
+
+
+@time Arpack.eigs(a; nev= 1000, which=:LR, maxiter=200)
+
+@time KrylovKit.eigsolve(a, 1000, :LR;issymmetric = true, krylovdim = 1000, maxiter = 200)

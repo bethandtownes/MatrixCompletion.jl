@@ -1,10 +1,11 @@
+include("abstract_unittest_functions.jl")
 @info("Simulation: Vary Rank [NegativeBinomial, Small]")
 
 let
   Random.seed!(65536)
   ROW = 400
   COL = 400
-   for input_rank in collect(1:400)
+   for input_rank in collect(172:400)
     @printf("small case: rank = %d\n", input_rank)
     # dist = Bernoulli()
     timer = TimerOutput()
@@ -22,7 +23,7 @@ let
     manual_type_matrix   .= :NegativeBinomial
     user_input_estimators = Dict(:NegativeBinomial=> Dict(:r=>6, :p=>0.8))
     
-    @timeit timer  "Bernoulli(400x400)" * "| rank=" * string(input_rank) begin
+    @timeit timer  "NegativeBinomial(400x400)" * "| rank=" * string(input_rank) begin
       completed_matrix, type_tracker, tracker = complete(A                     = input_matrix,
                                                          maxiter               = 200,
                                                          ρ                     = 0.3,

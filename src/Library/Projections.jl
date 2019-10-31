@@ -4,6 +4,9 @@ using ..Utilities.FastEigen
 using LinearAlgebra
 
 
+
+
+
 function MathLibSignatures.project(to::SemidefiniteCone, mat::Array{Float64, 2};
                                    eigs_implementation = KrylovMethods())
   if isnothing(rank(to))
@@ -19,7 +22,7 @@ function MathLibSignatures.project(to::SemidefiniteCone, mat::Array{Float64, 2};
   # we are computing the full projection
   Λ, X = eigs(eigs_implementation, mat, nev = to.rank)
   # return X * diagm(0 => Λ) * X' 
-  id = findall(x -> x > 0, Λ)
+  id = findall(x -> real(x) > 0, Λ)
   return X[:, id] * diagm(0 => Λ[id]) * (X[:,id])' 
 end
 

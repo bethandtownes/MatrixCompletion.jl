@@ -468,7 +468,8 @@ function complete(;A::Array{MaybeMissing{Float64}} = nothing,
                   dynamic_ρ                        = true,
                   user_input_estimators            = nothing,
                   project_rank                     = nothing,
-                  io::IO                           = Base.stdout)
+                  io::IO                           = Base.stdout,
+                  eigen_solver                     = KrylovMethods())
   logger = SimpleLogger(io)
   global_logger(logger)
   if isnothing(project_rank)
@@ -494,19 +495,19 @@ function complete(;A::Array{MaybeMissing{Float64}} = nothing,
   for iter = 1:maxiter
     @. Xinput = Z + W/ρ
     # step 1
-    try
+    # try
       if isnothing(project_rank)
         X = project(SemidefiniteCone(), Z + W / ρ - (μ / ρ) * II)
       else
-        X = project(SemidefiniteCone(rank = project_rank), Z + W / ρ - (μ / ρ) * II)
+        X = project(SemidefiniteCone(rank = project_rank), Z + W / ρ - (μ / ρ) * II,
+                    eigs_implementation = eigen_solver)
       end
-    catch e
-      @warn("Manual fix for numerical instability")
-      fix =  Z + W / ρ - (μ / ρ) * II
-      fix[findall(x -> x== Inf || isnan(x), fix)] .= rand()
-      X = project(SemidefiniteCone(rank = 20), fix)
-    end
-      
+    # catch e
+    #   @warn("Manual fix for numerical instability")
+    #   fix =  Z + W / ρ - (μ / ρ) * II
+    #   fix[findall(x -> x== Inf || isnan(x), fix)] .= rand()
+    #   X = project(SemidefiniteCone(rank = 20), fix)
+    # end
     # Step 2
     @. C = X - 1/ρ * W; @. Z = C
     Z12 = calculate_Z12_update(A, C, tracker, ρ, α, warmup, use_autodiff, gd_iter, estimators)
@@ -528,4 +529,3 @@ function complete(;A::Array{MaybeMissing{Float64}} = nothing,
 end
 
 end
-
