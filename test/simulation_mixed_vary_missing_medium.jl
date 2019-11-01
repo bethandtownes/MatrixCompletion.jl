@@ -6,22 +6,23 @@ let
   Random.seed!(65536)
   ROW = 2000
   COL = 2000
-  for input_rank in union(1,collect(10:10:100))
+  # for input_rank in union(1,collect(10:10:100))
+  for input_rank in union(40)
     for input_sample in union(collect(50:5:99))
-      try
+      # try
       @printf("medium case: rank = %d | sample = %d%%\n", input_rank, input_sample)
       timer = TimerOutput()
       RESULTS_DIR    = GLOBAL_SIMULATION_RESULTS_DIR *
-        "mixed/medium(2000x2000)(vary_missing)/" *
+        "mixed/medium(2000x2000)(vary_missing)_standardized/" *
         "rank" * string(input_rank) * "/"  *
-        "sample" * string(input_sample) * "/"
+        "iter_400_sample" * string(input_sample) * "/"
       LOG_FILE_NAME  = "io.log"
       DATA_FILE_NAME = "saved_variables.h5"
       LOG_FILE_PATH  = RESULTS_DIR * LOG_FILE_NAME
       DATA_FILE_PATH = RESULTS_DIR * DATA_FILE_NAME
       Base.Filesystem.mkpath(RESULTS_DIR)
       io = open(LOG_FILE_PATH, "w")
-      truth_matrix      = rand([(FixedRankMatrix(Distributions.Gaussian(10, 5),          rank = input_rank), 2000, 400),
+      truth_matrix      = rand([(FixedRankMatrix(Distributions.Gaussian(0, 1),           rank = input_rank), 2000, 400),
                                 (FixedRankMatrix(Distributions.Bernoulli(0.5),           rank = input_rank), 2000, 400),
                                 (FixedRankMatrix(Distributions.Gamma(10, 0.5),           rank = input_rank), 2000, 400),
                                 (FixedRankMatrix(Distributions.Poisson(5),               rank = input_rank), 2000, 400),
@@ -38,7 +39,7 @@ let
 
       @timeit timer  "Mixed(2000x2000)" * "| rank=" * string(input_rank) * "| sample=" * string(input_sample) begin
         completed_matrix, type_tracker, tracker = complete(A                     = input_matrix,
-                                                           maxiter               = 200,
+                                                           maxiter               = 400,
                                                            ρ                     = 0.3,
                                                            use_autodiff          = false,
                                                            gd_iter               = 3,
@@ -70,9 +71,9 @@ let
       print(io, timer)
       close(io)
       # end
-    catch
-      @printf("ERROR!!! rank = %d | sample = %d%%\n", input_rank, input_sample)
-    end
+      # catch
+      #   @printf("ERROR!!! rank = %d | sample = %d%%\n", input_rank, input_sample)
+      # end
     end
   end
 end

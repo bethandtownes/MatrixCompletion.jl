@@ -6,14 +6,14 @@ let
   for input_rank in union(1, 10:10:400)
     @printf("medium case: rank = %d\n", input_rank)
     timer = TimerOutput()
-    RESULTS_DIR    = GLOBAL_SIMULATION_RESULTS_DIR * "mixed/medium(2000x2000)(vary_rank)/" * "rank" * string(input_rank) * "/"
+    RESULTS_DIR    = GLOBAL_SIMULATION_RESULTS_DIR * "mixed/medium(2000x2000)(vary_rank)_standardized/" * "rank" * string(input_rank) * "/"
     LOG_FILE_NAME  = "io.log"
     DATA_FILE_NAME = "saved_variables.h5"
     LOG_FILE_PATH  = RESULTS_DIR * LOG_FILE_NAME
     DATA_FILE_PATH = RESULTS_DIR * DATA_FILE_NAME
     Base.Filesystem.mkpath(RESULTS_DIR)
     io = open(LOG_FILE_PATH, "w")
-    truth_matrix         = rand([(FixedRankMatrix(Distributions.Gaussian(10, 5),          rank = input_rank), 2000, 400),
+    truth_matrix         = rand([(FixedRankMatrix(Distributions.Gaussian(0, 1),          rank = input_rank), 2000, 400),
                                  (FixedRankMatrix(Distributions.Bernoulli(0.5),           rank = input_rank), 2000, 400),
                                  (FixedRankMatrix(Distributions.Gamma(10, 0.5),           rank = input_rank), 2000, 400),
                                  (FixedRankMatrix(Distributions.Poisson(5),               rank = input_rank), 2000, 400),

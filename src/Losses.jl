@@ -68,7 +68,7 @@ loss_logistic(x,y,c,ρ) = -sum(y .* log.(σ.(x)) .+ (1 .- y) .* log.(1 .- σ.(x)
 
 
 
-#==============================================================================#
+ #==============================================================================#
 #                             Gaussian Loss                                    #
 #==============================================================================#
 function Concepts.provide(loss::Loss{AbstractGaussian})    
@@ -76,15 +76,17 @@ function Concepts.provide(loss::Loss{AbstractGaussian})
 end
 
 
-function evaluate(loss::Loss{AbstractGaussian},
+function Concepts.evaluate(loss::Loss{AbstractGaussian},
                   x,y,c,ρ)
   #TODO
+  return sum(0.5 .* (y .- x).^2) + sum(ρ .* (x .- c).^2);
 end
 
 
 function grad(loss::Loss{AbstractGaussian} ,
               x,y,c,ρ)
   #TODO
+  return -(y .- x) .+ (2*ρ) .* (x .- c)
 end
 #==============================================================================#
 #                         Bernoulli (Logistic) Loss                            #

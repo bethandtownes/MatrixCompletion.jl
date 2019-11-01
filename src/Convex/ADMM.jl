@@ -88,6 +88,9 @@ function initialize_warmup(tracker, A)
   if haskey(tracker, :Bernoulli) && length(tracker[:Bernoulli][:Observed]) > 0
     warmup[:Bernoulli] = rand(length(tracker[:Bernoulli][:Observed]), 1)
   end
+  if haskey(tracker, :Gaussian) && length(tracker[:Gaussian][:Observed]) > 0
+    warmup[:Gaussian] = rand(length(tracker[:Gaussian][:Observed]), 1)
+  end
   if haskey(tracker, :Poisson) && length(tracker[:Poisson][:Observed]) > 0
     warmup[:Poisson] = rand(length(tracker[:Poisson][:Observed]), 1)
   end
@@ -194,12 +197,30 @@ end
 
 @private 
 function update(::Type{Val{:Gaussian}},
-                A       ::Array{MaybeMissing{Float64}},
-                Y12     ::Array{Float64},
-                tracker ::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}},
-                ρ       ::Float64)
-  if haskey(tracker, :Gaussian) && length(tracker[:Gaussian][:Observed]) > 0
-    Y12[tracker[:Gaussian][:Observed]] .= (1 / (1 + ρ)) * (A[tracker[:Gaussian][:Observed]] + ρ * Y12[tracker[:Gaussian][:Observed]])
+                A            ::Array{MaybeMissing{Float64}},
+                Y12          ::Array{Float64},
+                tracker      ::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}},
+                ρ            ::Float64,
+                gd_iter      ::Int64,
+                warmup       ::Dict{Symbol, Array{Float64}},
+                γ            ::Float64,
+                use_autodiff ::Bool,
+                closed_form  ::Bool)
+  if closed_form == true
+     if haskey(tracker, :Gaussian) && length(tracker[:Gaussian][:Observed]) > 0
+      Y12[tracker[:Gaussian][:Observed]] .= (1 / (1 + ρ)) * (A[tracker[:Gaussian][:Observed]] + ρ * Y12[tracker[:Gaussian][:Observed]])
+    end
+  else
+    if haskey(tracker, :Gaussian) && length(tracker[:Gaussian][:Observed]) > 0
+      Y12[tracker[:Gaussian][:Observed]] = train(use_autodiff ? provide(Loss{AbstractGaussian}()) : Loss{AbstractGaussian}(),
+                                                  fx   = warmup[:Gaussian],
+                                                  y    = A[tracker[:Gaussian][:Observed]],
+                                                  c    = Y12[tracker[:Gaussian][:Observed]],
+                                                  ρ    = ρ,
+                                                  iter = gd_iter,
+                                                  γ    = 0.2)
+      warmup[:Gaussian] = Y12[tracker[:Gaussian][:Observed]]
+    end
   end
 end
 
@@ -338,10 +359,10 @@ function set_diagonal(mat::Array{Float64, 2}, val::Array{Float64, 1})
   [mat[i, i] = val[i] for i in 1:length(val)]
 end
 
-function calculate_Z12_update(A, C,tracker, ρ, α, warmup, use_autodiff, gd_iter, estimators)
+function calculate_Z12_update(A, C,tracker, ρ, α, warmup, use_autodiff, gd_iter, estimators, closed_form)
   d1, d2 = size(A)
   Z12 = C[1:d1, (d1+1):(d1+d2)]
-  update(:Gaussian,         A, Z12, tracker, ρ)
+  update(:Gaussian,         A, Z12, tracker, ρ, gd_iter, warmup, 0.2,   use_autodiff, closed_form)
   update(:Bernoulli,        A, Z12, tracker, ρ, gd_iter, warmup, 0.2,   use_autodiff)
   update(:Poisson,          A, Z12, tracker, ρ, gd_iter, warmup, 0.05,  use_autodiff)
   update(:Gamma,            A, Z12, tracker, ρ, gd_iter, warmup, 0.005, use_autodiff)
@@ -395,7 +416,12 @@ function print_optimization_log(iter,A, X, Z, Z12, W, II, Rp, Rd, ρ, λ, μ, tr
   local gamma_loss             = -10000000
   local negative_binomial_loss = -10000000
   if haskey(tracker, :Gaussian)
-    gaussian_loss = norm(Z12[tracker[:Gaussian][:Observed]] -  A[tracker[:Gaussian][:Observed]])^2
+    # gaussian_loss = norm(Z12[tracker[:Gaussian][:Observed]] -  A[tracker[:Gaussian][:Observed]])^2
+    gaussian_loss = evaluate(Loss{AbstractGaussian}(),
+                              Z12[tracker[:Gaussian][:Observed]],
+                              A[tracker[:Gaussian][:Observed]],
+                              similar(Z12[tracker[:Gaussian][:Observed]]),
+                              0)
   end
   if haskey(tracker, :Bernoulli)
     bernoulli_loss = evaluate(Loss{AbstractBernoulli}(),
@@ -452,6 +478,19 @@ function print_optimization_log(iter,A, X, Z, Z12, W, II, Rp, Rd, ρ, λ, μ, tr
   add_row(header_list, data=new_data, io = io)
 end
 
+#TODO
+# function standardize(A, tracker, estimators)
+#   A[tracker[:Gaussian][:Observed]] .= (A[tracker[:Gaussian][:Observed]] .- estimators[:Gaussian][:μ]) ./ estimators[:Gaussian][:σ]
+# end
+
+
+#TODO
+# function destandardize(A, type_tracker, estimators)
+#   A[tracker[:Gaussian]]] .= (A[tracker] .* estimators[:Gaussian][:σ]) .+ estimators[:Gaussian][:μ]
+# end
+
+
+
 function complete(;A::Array{MaybeMissing{Float64}} = nothing,
                   α::Float64                       = maximum(A[findall(x -> !ismissing(x),A)]),
                   λ::Float64                       = 5e-1,
@@ -469,7 +508,8 @@ function complete(;A::Array{MaybeMissing{Float64}} = nothing,
                   user_input_estimators            = nothing,
                   project_rank                     = nothing,
                   io::IO                           = Base.stdout,
-                  eigen_solver                     = KrylovMethods())
+                  eigen_solver                     = KrylovMethods(),
+                  closed_form_update               = false)
   logger = SimpleLogger(io)
   global_logger(logger)
   if isnothing(project_rank)
@@ -510,7 +550,7 @@ function complete(;A::Array{MaybeMissing{Float64}} = nothing,
     # end
     # Step 2
     @. C = X - 1/ρ * W; @. Z = C
-    Z12 = calculate_Z12_update(A, C, tracker, ρ, α, warmup, use_autodiff, gd_iter, estimators)
+    Z12 = calculate_Z12_update(A, C, tracker, ρ, α, warmup, use_autodiff, gd_iter, estimators, closed_form_update)
     set_block_12(Z, d1, d2, Z12)
     set_block_21(Z, d1, d2, Z12')
     set_diagonal(Z, diag(C) - (λ / ρ) * l1BallProjection(diag(C) * ρ / λ, 1))
