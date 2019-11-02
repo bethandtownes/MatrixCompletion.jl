@@ -7,7 +7,7 @@ let
   ROW = 2000
   COL = 2000
   # for input_rank in union(1,collect(10:10:100))
-  for input_rank in union(40)
+  for input_rank in union(40, 60, 70, 80, 100)
     for input_sample in union(collect(50:5:99))
       # try
       @printf("medium case: rank = %d | sample = %d%%\n", input_rank, input_sample)
@@ -15,7 +15,7 @@ let
       RESULTS_DIR    = GLOBAL_SIMULATION_RESULTS_DIR *
         "mixed/medium(2000x2000)(vary_missing)_standardized/" *
         "rank" * string(input_rank) * "/"  *
-        "iter_400_sample" * string(input_sample) * "/"
+        "sample" * string(input_sample) * "/"
       LOG_FILE_NAME  = "io.log"
       DATA_FILE_NAME = "saved_variables.h5"
       LOG_FILE_PATH  = RESULTS_DIR * LOG_FILE_NAME
@@ -39,7 +39,7 @@ let
 
       @timeit timer  "Mixed(2000x2000)" * "| rank=" * string(input_rank) * "| sample=" * string(input_sample) begin
         completed_matrix, type_tracker, tracker = complete(A                     = input_matrix,
-                                                           maxiter               = 400,
+                                                           maxiter               = 200,
                                                            ρ                     = 0.3,
                                                            use_autodiff          = false,
                                                            gd_iter               = 3,
@@ -47,7 +47,8 @@ let
                                                            user_input_estimators = user_input_estimators,
                                                            project_rank          = input_rank * 10 + 1,
                                                            io                    = io,
-                                                           type_assignment       = manual_type_matrix)
+                                                           type_assignment       = manual_type_matrix,
+                                                           closed_form_update    = true)
       end
 
       predicted_matrix = predict(MatrixCompletionModel(),

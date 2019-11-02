@@ -364,7 +364,7 @@ function calculate_Z12_update(A, C,tracker, ρ, α, warmup, use_autodiff, gd_ite
   Z12 = C[1:d1, (d1+1):(d1+d2)]
   update(:Gaussian,         A, Z12, tracker, ρ, gd_iter, warmup, 0.2,   use_autodiff, closed_form)
   update(:Bernoulli,        A, Z12, tracker, ρ, gd_iter, warmup, 0.2,   use_autodiff)
-  update(:Poisson,          A, Z12, tracker, ρ, gd_iter, warmup, 0.05,  use_autodiff)
+  update(:Poisson,          A, Z12, tracker, ρ, gd_iter, warmup, 0.2,  use_autodiff)
   update(:Gamma,            A, Z12, tracker, ρ, gd_iter, warmup, 0.005, use_autodiff)
   update(:NegativeBinomial, A, Z12, tracker, ρ, gd_iter, warmup, 0.005, use_autodiff, estimators[:NegativeBinomial])
   project!(ClosedInterval{Float64}(-α, α), Z12)

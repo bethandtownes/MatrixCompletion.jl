@@ -13,7 +13,7 @@ function MathLibSignatures.project(to::SemidefiniteCone, mat::Array{Float64, 2};
     # do a full projection
     # @warn("Doing full eigen projection, could be costly!")
     eigDecomposition    = eigen(mat);
-    posEigenValuesIndex = findall(x -> x>0,eigDecomposition.values);
+    posEigenValuesIndex = findall(x -> real(x) > 0,eigDecomposition.values);
     posEigenValues      = eigDecomposition.values[posEigenValuesIndex];
     posEigenVectors     = eigDecomposition.vectors[:,posEigenValuesIndex];
     projectedMatrix     = posEigenVectors * diagm(0 => posEigenValues) *posEigenVectors';
