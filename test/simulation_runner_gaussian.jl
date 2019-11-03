@@ -46,7 +46,7 @@ const SIMULATION_STATUS_GAUSSIAN_VARY_MISSING_PERCENTAGE_LARGE   = nothing
 
         summary_object   = summary(MatrixCompletionModel(),
                                    predicted_matrix = predicted_matrix,
-                                   truth_matrix     = truth_matrix,
+p                                   truth_matrix     = truth_matrix,
                                    type_tracker     = type_tracker,
                                    tracker          = tracker)
         pickle(DATA_FILE_PATH,
