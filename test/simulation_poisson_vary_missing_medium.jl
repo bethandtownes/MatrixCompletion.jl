@@ -3,10 +3,10 @@ include("abstract_unittest_functions.jl")
 
 let
   Random.seed!(65536)
-  ROW = 2000
-  COL = 200
-  for input_rank in union(1, collect(25:25:400))
-    for input_sample in union(1, collect(5:5:99))
+  ROW = 400
+  COL = 400
+  for input_rank in union(collect(25:25:400))
+    for input_sample in union(collect(5:5:99))
       try
         @printf("small case: rank = %d | sample = %d%%\n", input_rank, input_sample)
         timer = TimerOutput()
