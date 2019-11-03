@@ -102,7 +102,7 @@ let
          "summary"          => summary_object)
   print(io, JSON.json(summary_object, 4))
   print(io, timer)
-  close(io)
+s  close(io)
   # end
   # catch
   #   @printf("ERROR!!! rank = %d | sample = %d%%\n", input_rank, input_sample)

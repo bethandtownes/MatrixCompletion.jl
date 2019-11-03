@@ -11,7 +11,7 @@ let
       @printf("small case: rank = %d | sample = %d%%\n", input_rank, input_sample)
       timer = TimerOutput()
       RESULTS_DIR    = GLOBAL_SIMULATION_RESULTS_DIR *
-        "gaussian/small_400x400_vary_missing_standardized/" *
+        "gaussian/mu=0_sigma=1/small_400x400_vary_missing/" *
         "rank" * string(input_rank) * "/"  *
         "sample" * string(input_sample) * "/"
       LOG_FILE_NAME  = "io.log"

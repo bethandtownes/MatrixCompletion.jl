@@ -1,4 +1,4 @@
-include("abstract_unittest_functions.jl")
+ include("abstract_unittest_functions.jl")
 
 @info("Simulation: Vary Missing [Poisson, Medium]")
 let
@@ -6,7 +6,7 @@ let
   ROW = 2000
   COL = 2000
   for input_rank in union(40, 100)
-    for input_sample in union(1, collect(5:5:99))
+    for input_sample in union(collect(50:5:99))
       try
         @printf("medium case: rank = %d | sample = %d%%\n", input_rank, input_sample)
         timer = TimerOutput()

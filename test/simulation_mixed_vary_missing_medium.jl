@@ -7,7 +7,7 @@ let
   ROW = 2000
   COL = 2000
   # for input_rank in union(1,collect(10:10:100))
-  for input_rank in union(40, 60, 70, 80, 100)
+  for input_rank in union(80)
     for input_sample in union(collect(50:5:99))
       # try
       @printf("medium case: rank = %d | sample = %d%%\n", input_rank, input_sample)
