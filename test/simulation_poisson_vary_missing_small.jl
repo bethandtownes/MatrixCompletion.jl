@@ -33,7 +33,7 @@ let
                                                              use_autodiff    = false,
                                                              gd_iter         = 3,
                                                              debug_mode      = false,
-                                                             project_rank    = nothing,
+                                                             project_rank    = input_rank * 2,
                                                              io              = io,
                                                              type_assignment = manual_type_matrix)
         end

@@ -6,13 +6,13 @@ let
   Random.seed!(65536)
   ROW = 500
   COL = 500
-  for input_rank in union(collect(20:10:100))
+  for input_rank in union(1, collect(10:10:100))
      for input_sample in union(collect(50:5:99))
       try
       @printf("small case: rank = %d | sample = %d%%\n", input_rank, input_sample)
       timer = TimerOutput()
       RESULTS_DIR    = GLOBAL_SIMULATION_RESULTS_DIR *
-        "mixed/small_500x500_vary_missing_standarized/" *
+        "mixed/small_500x500_vary_missing_standarized_lanzcos/" *
         "rank" * string(input_rank) * "/"  *
         "sample" * string(input_sample) * "/"
       LOG_FILE_NAME  = "io.log"
@@ -21,7 +21,7 @@ let
       DATA_FILE_PATH = RESULTS_DIR * DATA_FILE_NAME
       Base.Filesystem.mkpath(RESULTS_DIR)
       io = open(LOG_FILE_PATH, "w")
-      truth_matrix      = rand([(FixedRankMatrix(Distributions.Gaussian(0, 1),          rank = input_rank), 500, 100),
+      truth_matrix       = rand([(FixedRankMatrix(Distributions.Gaussian(0, 1),          rank = input_rank), 500, 100),
                                 (FixedRankMatrix(Distributions.Bernoulli(0.5),           rank = input_rank), 500, 100),
                                 (FixedRankMatrix(Distributions.Gamma(10, 0.5),           rank = input_rank), 500, 100),
                                 (FixedRankMatrix(Distributions.Poisson(5),               rank = input_rank), 500, 100),
@@ -44,11 +44,11 @@ let
                                                            gd_iter               = 3,
                                                            debug_mode            = false,
                                                            user_input_estimators = user_input_estimators,
-                                                           project_rank          = nothing,
+                                                           project_rank          = input_rank * 10,
                                                            io                    = io,
                                                            type_assignment       = manual_type_matrix)
       end
-
+        
       predicted_matrix = predict(MatrixCompletionModel(),
                                  completed_matrix = completed_matrix,
                                  type_tracker     = type_tracker,
