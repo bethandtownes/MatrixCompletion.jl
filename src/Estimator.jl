@@ -2,8 +2,6 @@ module Estimator
 
 using ..Concepts
 
-
-
 import Distributions
 import StatsBase
 
@@ -109,8 +107,5 @@ function Concepts.estimator(name::MLE{AbstractBernoulli},data::AutoboxedArray{T}
         return Dict(:p => est.p)
     end
 end
-
-
-
 
 end

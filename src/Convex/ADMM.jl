@@ -20,11 +20,6 @@ import LinearAlgebra:norm
 
 export complete
 
-
-
-
-
-
 mutable struct RunHistory
   primfeas::Array{Float64,1}
   dualfeas::Array{Float64,1}

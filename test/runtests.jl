@@ -17,10 +17,10 @@ const to = TimerOutput()
 #                               TEST OPTIONS                                   #
 #==============================================================================#
 const TEST_OPTION_PRINT_TIMER    = false
-const TEST_OPTION_SMALL_INPUT    = true
+const TEST_OPTION_SMALL_INPUT    = false
 const TEST_OPTION_MEDIUM_INPUT   = false
 const TEST_OPTION_LARGE_INPUT    = false
-const TEST_OPTION_USE_AUTOGRAD   = true
+const TEST_OPTION_USE_AUTOGRAD   = false
 const TEST_OPTION_TEST_R_WRAPPER = false
 
 
@@ -53,6 +53,8 @@ const FLAG_TEST_UTILITY_BATCHUTILS               = false
 const FLAG_TEST_SGD_BERNOULLI                    = false
 const FLAG_TEST_SGD_GAMMA                        = false
 
+
+# TODO
 const FLAG_TEST_ALGO_ADMM_PARALLELL              = false
 const FLAG_TEST_ALGO_GLRM                        = false
 const FLAG_TEST_ALGO_SVT                         = false
@@ -65,7 +67,7 @@ const FLAG_TEST_ALGO_OPTSPACE                    = false
 #==============================================================================#
 
 const FLAG_SIMULATION_ADMM_GAMMA                 = false
-const FLAG_SIMULATION_ADMM_BERNOULLI             = true
+const FLAG_SIMULATION_ADMM_BERNOULLI             = false
 const FLAG_SIMULATION_ADMM_GAUSSIAN              = false
 const FLAG_SIMULATION_ADMM_POISSON               = false
 const FLAG_SIMULATION_ADMM_GAUSSIAN_BERNOULLI    = false
