@@ -7,5 +7,5 @@ Manifest.toml
 .projectile
 .projectile~							
 Tmp.jl
-**/.el
+*.el
 emacs.desktop
