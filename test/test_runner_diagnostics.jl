@@ -135,7 +135,7 @@ end
         input_data = rand(10,10)
         reference = deepcopy(input_data)
         diagnostic = provide(Diagnostics{Gamma()}(),
-                             input_data = input_data,reference = reference);
+                             input_data = input_data, reference = reference);
         @test diagnostic["relative-error[#within-radius(1e-5)]"] == 0
         @test diagnostic["absolute-error[#within-radius(1e-5)]"] == 0
         @test diagnostic["relative-error[L1]"] == 0

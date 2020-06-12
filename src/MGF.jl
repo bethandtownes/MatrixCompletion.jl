@@ -22,8 +22,8 @@ end
 
 const MGF() = MGF{Any}()
 
-const MGF(object::Union{T, Symbol};logscale::Optional{Bool}=nothing) where T<:Any =
-    !isa(object,Symbol) ? MGF{T}(object,logscale=logscale) : MGF(convert(object),logscale=logscale)
+const MGF(object::Union{T, Symbol}; logscale::Optional{Bool} = nothing) where T<:Any =
+    !isa(object,Symbol) ? MGF{T}(object, logscale = logscale) : MGF(type_conversion(object), logscale=logscale)
                                          
 
 struct SampleMGF <: AbstractMGF
@@ -41,12 +41,20 @@ end
 export MGF,
     SampleMGF
 
+# @overload
+# function Base.convert(::Type{FrequencyDomainObjects},x::Symbol) 
+#     if x == :MGF
+#         return MGF
+#     end
+# end
+
 @overload
-function Base.convert(::Type{FrequencyDomainObjects},x::Symbol) 
+function Concepts.type_conversion(::Type{FrequencyDomainObjects}, x::Symbol) 
     if x == :MGF
         return MGF
     end
 end
+
 
 
 @overload

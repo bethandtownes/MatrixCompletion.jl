@@ -62,7 +62,7 @@ end
 
 # kind of hackish.. the second one just defined in the first.
 const Loss(of::Union{T,Symbol}) where T<:ExponentialFamily =
-  typeof(of) <: ExponentialFamily ? Loss{T}(of) : Loss(convert(ExponentialFamily, of))
+  typeof(of) <: ExponentialFamily ? Loss{T}(of) : Loss(type_conversion(ExponentialFamily, of))
 
 loss_logistic(x,y,c,ρ) = -sum(y .* log.(σ.(x)) .+ (1 .- y) .* log.(1 .- σ.(x))) .+  sum(ρ .* (x .- c).^2);
 
@@ -328,7 +328,5 @@ function sgd_subgrad_train(native_loss::Loss{T};
   end
   return curFx
 end
-
-
 
 end

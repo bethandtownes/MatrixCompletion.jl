@@ -7,7 +7,7 @@ const SIMULATION_STATUS_GAUSSIAN_VARY_MISSING_PERCENTAGE_MEDIUM  = false
 const SIMULATION_STATUS_GAUSSIAN_VARY_MISSING_PERCENTAGE_LARGE   = nothing
 
 @testset "$(format("ADMM Algorithm: Small Input Simulation [Gaussian 400 x 400]"))" begin
-  if SIMULATION_STATUS_GAUSSIAN_VARY_RANK_SMALL == false
+  if SIMULATION_STATUS_GAUSSIAN_VARY_RANK_SMALL == true
     let
       Random.seed!(65536)
       ROW = 400
@@ -46,7 +46,7 @@ const SIMULATION_STATUS_GAUSSIAN_VARY_MISSING_PERCENTAGE_LARGE   = nothing
 
         summary_object   = summary(MatrixCompletionModel(),
                                    predicted_matrix = predicted_matrix,
-p                                   truth_matrix     = truth_matrix,
+                                   truth_matrix     = truth_matrix,
                                    type_tracker     = type_tracker,
                                    tracker          = tracker)
         pickle(DATA_FILE_PATH,
@@ -68,7 +68,7 @@ end
 
 
 @testset "$(format("ADMM Algorithm: Medium Input Simulation [Gaussian 2000 x 2000]"))" begin
-  if SIMULATION_STATUS_GAUSSIAN_VARY_RANK_MEDIUM == false
+  if SIMULATION_STATUS_GAUSSIAN_VARY_RANK_MEDIUM == true
     let
       Random.seed!(65536)
       ROW = 2000

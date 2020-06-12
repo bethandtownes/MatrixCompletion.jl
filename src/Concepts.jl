@@ -64,7 +64,7 @@ const VecOrMatOfReals    = VecOrMat{<:Real}
 const VecOrMatOfFloats   = VecOrMat{<:AbstractFloat}
 const VecOrMatOfIntegers = VecOrMat{<:Integer}
 const VecOrMatOf{T}      = VecOrMat{<:T} where T<:Any
-const MaybeMissing{T}    = Union{Missing,T} where T<:Any
+const MaybeMissing{T}    = Union{Missing,T} where T<:Number
 
  
 const AutoboxedArray{T}  = Union{S,Array{S}} where S<:T
@@ -302,7 +302,7 @@ const Comparator(of::T) where T<:Any = begin
             Comparator{T}(of)
         end
     else
-        Comparator(convert(of))
+        Comparator(type_conversion(of))
     end
 end
 
@@ -325,16 +325,24 @@ export UnivariateDistributions,
 #                              Abstract Inteface                               #
 #==============================================================================#
 export provide,
-    convert,
     predict,
     check,
     evaluate,
     choose,
     join,
     disjoint_join,
-    groupby
+    groupby,
+    complete,
+    type_conversion
+
+    # convert,
 
 
+
+
+function type_conversion() end
+
+function complete() end
 
 function groupby() end
 
@@ -358,7 +366,6 @@ function check()
 end
 
 
-
 function pretty_print() end
 
 # const Concepts.check(object::Symbol,arg...;kwargs::Optional{Any}...) = Concepts.check(Val{object},arg...;kwargs...)
@@ -378,8 +385,6 @@ const Concepts.check(object::Symbol,arg...;kwargs::Optional{Any}...) = Concepts.
 
 # @overload
 # const Concepts.check(object::Symbol,arg1,arg2,arg3) =  Concepts.check(Val{object},arg1,arg2,arg3)
-
-
 
 function predict(object::T=nothing,arg...;kwargs...) where T<:Any
     throw(NotOverLoadedException("predict"))
@@ -404,21 +409,94 @@ const Concepts.choose(a::Symbol,b::Symbol;kwargs...) = Concepts.choose(Val{a},Va
 #==============================================================================#
 #                             Base Overrides                                   #
 #==============================================================================#
-   @overload
-function Base.convert(::Type{MaybeMissing{S}},x::VecOrMatOf{T}) where {T<:Any,S<:Any}
+
+# @overload
+# function Base.convert(::Type{Float64}, x::Array{Float64, 1})
+#     return x[1]
+# end
+
+# @overload
+# function Base.convert(::Type{Any}, x::Array{Float64, 1})
+#     return x[1]
+# end
+
+# @overload
+# function Base.convert(::Type{Int64}, x::Array{Int64, 1})
+#     return x[1]
+# end
+
+# @overload
+# function Base.convert(::Type{Any}, x::Array{Int64, 1})
+#     return x[1]
+# end
+
+# @overload
+# function Base.convert(::Type{Any}, x::Array{T, 1}) where T<:Number
+#     if isempty(x)
+#         return T(0)
+#     else
+#         return x[1]
+#     end
+# end
+
+# @overload
+# function Base.convert(::Type{MaybeMissing{S}}, x::VecOrMatOf{T}) where {T<:Any, S<:Any}
+#     ret = nothing;
+#     if isa(x, Vector)
+#         ret = Vector{MaybeMissing{S}}(undef,length(x))
+#         for i in 1:length(x)
+#             ret[i] = x[i]
+#         end
+#     end
+#     if isa(x,Matrix)        
+#         row, col = size(x)
+#         ret = Matrix{MaybeMissing{S}}(undef,row,col)
+#         for i in row
+#             for j in col
+#                 ret[i, j] = x[i, j]
+#             end
+#         end
+#     end
+#     return ret;
+# end
+
+
+# emacs indentation BUGGGGGGGGGG
+# @overload
+# function Base.convert(::Type{ExponentialFamily}, x::Symbol)
+#     if x == :Poisson || x == :Count
+#         return AbstractPoisson()
+#     end
+#     if x == :Gaussian || x == :Normal
+#         return AbstractGaussian()
+#     end
+#     if x == :Bernoulli || x == :Binary
+#         return AbstractBernoulli()
+#     end
+#     if x == :Gamma
+#         return AbstractGamma()
+#     end
+#     if x == :NegativeBinomial
+#         return AbstractNegativeBinomial()
+#     end
+#     throw(InexactError())
+# end
+
+@overload
+function type_conversion(::Type{MaybeMissing{S}}, x::VecOrMatOf{T}) where {T<:Any, S<:Any}
     ret = nothing;
-    if isa(x,Vector)
+    if isa(x, Vector)
         ret = Vector{MaybeMissing{S}}(undef,length(x))
         for i in 1:length(x)
             ret[i] = x[i]
         end
     end
-    if isa(x,Matrix)
+    if isa(x,Matrix)        
         row, col = size(x)
         ret = Matrix{MaybeMissing{S}}(undef,row,col)
         for i in row
             for j in col
-                ret[i,j] = x[i,j]
+                ret[i, j] = x[i, j]
             end
         end
     end
@@ -426,9 +504,13 @@ function Base.convert(::Type{MaybeMissing{S}},x::VecOrMatOf{T}) where {T<:Any,S<
 end
 
 
-# emacs indentation BUGGGGGGGGGG
+
+function type_conversion(::Type{Symbol}, x::Symbol)
+    return x
+end
+
 @overload
-function Base.convert(::Type{ExponentialFamily}, x::Symbol)
+function type_conversion(::Type{ExponentialFamily}, x::Symbol)
     if x == :Poisson || x == :Count
         return AbstractPoisson()
     end
@@ -448,7 +530,7 @@ function Base.convert(::Type{ExponentialFamily}, x::Symbol)
 end
 
 @overload
-function Base.convert(::Type{Symbol}, x::ExponentialFamily)
+function type_conversion(::Type{Symbol}, x::ExponentialFamily)
   if x == AbstractPoisson()
     return :Poisson
   end
@@ -463,21 +545,42 @@ function Base.convert(::Type{Symbol}, x::ExponentialFamily)
   end
   if x == AbstractNegativeBinomial()
     return :NegativeBinomial
-  end
+  end    
 end
 
 
 @overload
-function Base.convert(x::Symbol) 
-    try return Base.convert(ExponentialFamily,x)      catch  end
-    try return Base.convert(FrequencyDomainObjects,x) catch  end
-    throw(UnrecognizedSymbolException(String(x)))
+function type_conversion(x::Symbol)
+    try return type_conversion(ExponentialFamily, x)      catch  end
+    try return type_conversion(FrequencyDomainObjects, x) catch  end
+    throw(UnrecognizedSymbolException(String(x)))    
 end
 
+# @overload
+# function Base.convert(::Type{Symbol}, x::ExponentialFamily)
+#   if x == AbstractPoisson()
+#     return :Poisson
+#   end
+#   if x == AbstractGaussian()
+#     return :Gaussian
+#   end
+#   if x == AbstractBernoulli()
+#     return :Bernoulli
+#   end
+#   if x == AbstractGamma()
+#     return :Gamma
+#   end
+#   if x == AbstractNegativeBinomial()
+#     return :NegativeBinomial
+#   end
+# end
 
 
-
+# @overload
+# function Base.convert(x::Symbol) 
+#     try return Base.convert(ExponentialFamily,x)      catch  end
+#     try return Base.convert(FrequencyDomainObjects,x) catch  end
+#     throw(UnrecognizedSymbolException(String(x)))
+# end
 
 end # Module: Concept
-
-

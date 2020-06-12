@@ -52,7 +52,8 @@ struct Sampler{T<:AbstractSamplingModels}
                 if isa(x,Vector)
                     n = length(x)
                     mask  = [CartesianIndex(i) for i in StatsBase.sample(1:n,Int.(n * model.rate))]
-                    sampled_object = convert(MaybeMissing{T},Array{Missing}(undef,n))
+                    # sampled_object = convert(MaybeMissing{T},Array{Missing}(undef,n))
+                    sampled_object = type_conversion(MaybeMissing{T},Array{Missing}(undef,n))
                     for i in mask
                         sampled_object[i] = x[i]
                     end
@@ -60,7 +61,8 @@ struct Sampler{T<:AbstractSamplingModels}
                     row,col = size(x)
                     mask = [CartesianIndex(StatsBase.sample(1:row),StatsBase.sample(1:col)) for i in 1:Int.(row * col * model.rate)]
 #                    display(mask)
-                    sampled_object = convert(MaybeMissing{T},Array{Missing,2}(undef,row,col))
+                    # sampled_object = convert(MaybeMissing{T},Array{Missing,2}(undef,row,col))
+                    sampled_object = type_conversion(MaybeMissing{T},Array{Missing,2}(undef,row,col))
 #                    display(sampled_object)
 #                    display(x)
                     for i in mask

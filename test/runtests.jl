@@ -1,13 +1,22 @@
 module Tst
 
-include("abstract_unittest_functions.jl")
+include("abstract_unittest_functions.jl") 
 
+
+using Test,TimerOutputs,Printf
+using HDF5
+using JSON
+using DataFrames
+import Distributions, Random
+import Serialization
 using MatrixCompletion
+
+
 
 
 # legacy code to be refactored soon!!
 
-const to = TimerOutput()
+# const to = TimerOutput()
 
 
 
@@ -53,10 +62,11 @@ const FLAG_TEST_UTILITY_BATCHUTILS               = false
 const FLAG_TEST_SGD_BERNOULLI                    = false
 const FLAG_TEST_SGD_GAMMA                        = false
 
+const FLAG_TEST_ALGO_ALM                         = true
+
 
 # TODO
 const FLAG_TEST_ALGO_ADMM_PARALLELL              = false
-const FLAG_TEST_ALGO_GLRM                        = false
 const FLAG_TEST_ALGO_SVT                         = false
 const FLAG_TEST_ALGO_ONEBIT                      = false
 const FLAG_TEST_ALGO_OPTSPACE                    = false
@@ -176,7 +186,10 @@ FLAG_TEST_SGD_BERNOULLI ?
   include("test_runner_sgd_bernoulli.jl")      : @info @sprintf("Skipped: SGD[Bernoulli]")
 
 FLAG_TEST_SGD_GAMMA ?
-  include("test_runner_sgd_gamma.jl")          : @info @sprintf("Skipped: SGD[Gamma]")
+    include("test_runner_sgd_gamma.jl")        : @info @sprintf("Skipped: SGD[Gamma]")
+
+FLAG_TEST_ALGO_ALM ?
+    include("test_runner_algo_alm.jl")         : @info @sprintf("Skipped: ALGO[ALM]")
 #==============================================================================#
 #                                VISUAL SCRIPTS                                #
 #==============================================================================#
@@ -190,4 +203,4 @@ if TEST_OPTION_PRINT_TIMER
   println(to)
 end
 
-end
+end 

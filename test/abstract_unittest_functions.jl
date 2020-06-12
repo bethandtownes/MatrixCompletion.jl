@@ -41,7 +41,7 @@ end
 # end
 
 
-
+# function Base.convert(::Type{T}
 
 
 function Base.truncate(::Type{Dict{String, Number}}, object::Dict{String, T}) where T<:Any
@@ -121,4 +121,5 @@ function read_pickled(filepath::String, var_name)
 end
 
 
-const GLOBAL_SIMULATION_RESULTS_DIR = "/home/jasonsun0310/datavolume/matrix_completion_simulation_result/"
+# const GLOBAL_SIMULATION_RESULTS_DIR = "/home/jasonsun0310/datavolume/matrix_completion_simulation_result/"
+const GLOBAL_SIMULATION_RESULTS_DIR = "/Users/daqiansun/matrix_completion_simulation_result/"

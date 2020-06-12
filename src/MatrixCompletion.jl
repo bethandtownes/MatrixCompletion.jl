@@ -67,7 +67,7 @@ include("./Library/MathLib.jl")
 @api evaluate           Concepts.evaluate
 @api estimator          Concepts.estimator
 @api choose             Concepts.choose
-
+@api complete           Concepts.complete
 
 
 @api NotOverLoadedException       Concepts.NotOverLoadedException
@@ -163,9 +163,17 @@ include("./Library/MathLib.jl")
 
 
 
+# include("./NonConvex/lowrankmodels/LowRankModels.jl")
 include("./Convex/ADMM.jl")
+include("./NonConvex/chained_glrm.jl")
 
-@api complete ADMM.complete
+@api ChainedALM       ALM.ChainedALM
+@api OneShotALM       ALM.OneShotALM
+
+
+
+
+# @api complete ADMM.complete
 
 
 

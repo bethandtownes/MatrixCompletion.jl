@@ -80,7 +80,8 @@ end
 
 @overload
 function Concepts.groupby(obj::IndexTracker{T}, list::Array{T}) where T<:Any
-    result = Dict{T, Dict{T, Array{<:CartesianIndex}}}()
+    # result = Dict{T, Dict{T, Array{<:CartesianIndex}}}()
+    result = Dict{T, Any}()
     for a_key in collect(unique(obj.keys))
         result[a_key] = Dict{T, Array{<:CartesianIndex}}()
         for sym in list   
@@ -90,14 +91,44 @@ function Concepts.groupby(obj::IndexTracker{T}, list::Array{T}) where T<:Any
     return result
 end
 
+# @overload
+# function Base.convert(::Type{Array{<:CartesianIndex}}, x::Union{Array{Int64, 1}, Array{CartesianIndex}})
+#   if typeof(x) <: Array{Int64,1}
+#     return [CartesianIndex{1}(_x) for _x in x]
+#   end
+#   return x
+# end
+
 @overload
-function Base.convert(::Type{Array{<:CartesianIndex}}, x::Union{Array{Int64, 1}, Array{CartesianIndex}})
+function Concepts.type_conversion(::Type{Array{<:CartesianIndex}}, x::Union{Array{Int64, 1}, Array{CartesianIndex{2}, 1}})
   if typeof(x) <: Array{Int64,1}
     return [CartesianIndex{1}(_x) for _x in x]
   end
   return x
 end
 
+
+
+# function disjoint_partition(a::IndexTrakcer{T}, b::Array{T, N}) where {T<:Any, N<:Any}
+#     if isnothing(a.dimension)
+#     a.dimension = size(b)
+#     elseif size(a) != size(b)
+#         @show(size(a))
+#         @show(size(b))
+#         throw(DimensionMismatch())
+#     end
+#     if isnothing(a.indices)
+#         a.indices = Dict{T, Array{CartesianIndex{N}, 1}}()
+#     end
+#     if length(intersect(unique(a.keys), unique(b))) > 0
+#         @warn("New View is not disjoint from the old")
+#         throw(MethodError())
+#     end
+#     for sym in collect(unique(b))
+#         # a.indices[sym] = convert(Array{<:CartesianIndex} ,findall(x -> x == sym, b))
+#         a.indices[sym] = type_conversion(Array{<:CartesianIndex}, findall(x -> x == sym, b))
+#     end
+# end
 
 @overload 
 function Concepts.disjoint_join(a::IndexTracker{T}, b::Array{T, N}) where {T<:Any, N<:Any}
@@ -117,6 +148,7 @@ function Concepts.disjoint_join(a::IndexTracker{T}, b::Array{T, N}) where {T<:An
     throw(MethodError())
   end
   for sym in collect(unique(b))
-    a.indices[sym] = convert(Array{<:CartesianIndex} ,findall(x -> x == sym, b))
+      # a.indices[sym] = convert(Array{<:CartesianIndex} ,findall(x -> x == sym, b))
+      a.indices[sym] = type_conversion(Array{<:CartesianIndex}, findall(x -> x == sym, b))
   end
 end

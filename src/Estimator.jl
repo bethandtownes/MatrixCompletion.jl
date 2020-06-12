@@ -52,10 +52,12 @@ end
 
 
 
+
+# const MLE(of::Union{T,Symbol}) where T<:Any =
+#     !isa(of,Symbol) ? MLE{T}(of) : MLE(convert(of))
+
 const MLE(of::Union{T,Symbol}) where T<:Any =
-    !isa(of,Symbol) ? MLE{T}(of) : MLE(convert(of))
-
-
+    !isa(of,Symbol) ? MLE{T}(of) : MLE(type_conversion(of))
 
 
 
