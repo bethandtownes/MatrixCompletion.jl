@@ -83,7 +83,8 @@ function Concepts.complete(model::OneShotALM;
                            ry = LowRankModels.QuadReg(0),
                            target_rank,
                            initialX = nothing,
-                           initialY = nothing)
+                           initialY = nothing,
+                           proximal_params = nothing)
     row, col = size(A)
     tracker = initialize_trackers(A, type_assignment)
     missing_entries = deepcopy(tracker[:Missing][:Total])
@@ -102,7 +103,12 @@ function Concepts.complete(model::OneShotALM;
         initialY = randn(target_rank, col)
     end
     glrm = LowRankModels.GLRM(imputed, loss, rx, ry, target_rank, obs = observed_entries, X = initialX, Y = initialY);
-    X, Y, ch = LowRankModels.fit!(glrm)
+    local X, Y, ch
+    if isnothing(proximal_params)
+        X, Y, ch = LowRankModels.fit!(glrm)
+    else
+        X, Y, ch = LowRankModels.fit!(glrm, proximal_params)
+    end
     update_imputed_entries!(imputed, missing_entries, X, Y)
     return imputed, X, Y, tracker
 end
@@ -117,7 +123,8 @@ function Concepts.complete(model::ChainedALM;
                            ry = LowRankModels.QuadReg(0),
                            target_rank,
                            initialX = nothing,
-                           initialY = nothing)
+                           initialY = nothing,
+                           proximal_params = nothing)
     row, col = size(A)
     tracker  = initialize_trackers(A, type_assignment)
     missing_entries = deepcopy(tracker[:Missing][:Total])
@@ -155,7 +162,12 @@ function Concepts.complete(model::ChainedALM;
             glrm = LowRankModels.GLRM(imputed, loss, rx, ry, target_rank, obs = observed_entries, X = prevX, Y = prevY)
         end
         warmup = true
-        X, Y, ch = LowRankModels.fit!(glrm)
+        local X, Y, ch
+        if isnothing(proximal_params)
+            X, Y, ch = LowRankModels.fit!(glrm)
+        else
+            X, Y, ch = LowRankModels.fit!(glrm, proximal_params)
+        end
         prevX = X
         prevY = Y
         update_observed_entries!(observed_entries, block_samples)

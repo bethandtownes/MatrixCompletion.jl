@@ -104,13 +104,17 @@ end
 
 
 function Base.convert(::Type{Array}, object::Array{Tuple{T, T}}) where T<:Real
-  converted = Array{T, 2}(undef, length(object), 2)
-  for col in 1:length(object)
-    converted[col,:] .= convert(Array, object[col])
-  end
-  return converted
+    converted = Array{T, 2}(undef, length(object), 2)
+    for col in 1:length(object)
+        converted[col,:] .= convert(Array, object[col])
+    end
+    return converted
 end
-  
+
+function Serialization.serialize(object::T) where T<:Number
+    return object
+end
+
 function Serialization.serialize(object::Array{T}) where T<:Real
   return object
 end
@@ -127,6 +131,14 @@ function Serialization.serialize(object::Tuple)
   return object
 end
 
+
+function pickle(filepath::String, data::AbstractDict)
+    h5open(filepath, "w") do file
+        for (k, v) in data
+            write(file, String(k), Serialization.serialize(v))
+        end
+    end
+end
 
 function pickle(filepath::String, vars...)
   h5open(filepath, "w") do file

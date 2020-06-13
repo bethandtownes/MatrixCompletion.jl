@@ -169,7 +169,7 @@ include("./NonConvex/chained_glrm.jl")
 
 @api ChainedALM       ALM.ChainedALM
 @api OneShotALM       ALM.OneShotALM
-
+@api ProxGradParams   LowRankModels.ProxGradParams 
 
 
 
