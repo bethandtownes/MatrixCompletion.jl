@@ -59,13 +59,13 @@ end
 
 @testset "$(format("Algorithm: OneShotALM[Randomized, Small]"))" begin
     for i in 1:1
-        @test get_diagnostic(run_one_shot_alm_randomized(m = 5000, n = 5000, k = 300, sample_rate = 80)...)[:L2_relative_error] < 0.05
+        @test get_diagnostic(run_one_shot_alm_randomized(m = 200, n = 200, k = 10, sample_rate = 80)...)[:L2_relative_error] < 0.05
     end
 end
 
 @testset "$(format("Algorithm: ChainedALM[Randomized, Small]"))" begin
-    for i in 1:1
-        @test get_diagnostic(run_chained_alm_randomized(m = 5000, n = 5000, k = 300, sample_rate = 80)...)[:L2_relative_error] < 0.05
+    for i in 1:1 
+       @test get_diagnostic(run_chained_alm_randomized(m = 200, n = 200, k = 10, sample_rate = 80)...)[:L2_relative_error] < 0.05
     end
 end
 

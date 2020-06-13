@@ -1,10 +1,33 @@
 using MatrixCompletion
-using Test,TimerOutputs,Printf
+
+import Pkg
+
+
+macro ensure_package(name::String)
+    if haskey(Pkg.installed(), name) == false
+        Pkg.add(name)
+    end
+end
+
+@ensure_package("TimerOutputs")
+@ensure_package("HDF5")
+@ensure_package("JSON")
+@ensure_package("DataFrames")
+@ensure_package("Distributions")
+
+using TimerOutputs
+
+using Test, Printf
 using HDF5
 using JSON
 using DataFrames
 import Distributions, Random
 import Serialization
+
+
+
+
+
 
 function unit_test_train_subloss(dist               = Poisson();
                                  gradient_eval      = Losses.provide(Loss{Poisson}()),
