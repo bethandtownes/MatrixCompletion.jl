@@ -167,6 +167,8 @@ include("./Library/MathLib.jl")
 include("./Convex/ADMM.jl")
 include("./NonConvex/chained_glrm.jl")
 
+@api OneShotADMM      ADMM.OneShotADMM
+@api ChainedADMM      ADMM.ChainedADMM
 @api ChainedALM       ALM.ChainedALM
 @api OneShotALM       ALM.OneShotALM
 @api ProxGradParams   LowRankModels.ProxGradParams 

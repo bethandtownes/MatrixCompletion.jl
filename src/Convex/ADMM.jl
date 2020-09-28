@@ -194,7 +194,7 @@ end
 function update(::Type{Val{:Gaussian}},
                 A            ::Array{MaybeMissing{Float64}},
                 Y12          ::Array{Float64},
-                tracker      ::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}},
+                tracker,
                 ρ            ::Float64,
                 gd_iter      ::Int64,
                 warmup       ::Dict{Symbol, Array{Float64}},
@@ -223,7 +223,7 @@ end
 function update(::Type{Val{:Bernoulli}},
                 A            ::Array{MaybeMissing{Float64}},
                 Y12          ::Array{Float64},
-                tracker      ::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}},
+                tracker,
                 ρ            ::Float64,
                 gd_iter      ::Int64,
                 warmup       ::Dict{Symbol, Array{Float64}},
@@ -245,7 +245,7 @@ end
 function update(::Type{Val{:Poisson}},
                 A            ::Array{MaybeMissing{Float64}},
                 Y12          ::Array{Float64},
-                tracker      ::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}},
+                tracker,
                 ρ            ::Float64,
                 gd_iter      ::Int64,
                 warmup       ::Dict{Symbol, Array{Float64}},
@@ -268,7 +268,7 @@ end
 function update(::Type{Val{:Gamma}},
                 A       ::Array{MaybeMissing{Float64}},
                 Y12     ::Array{Float64},
-                tracker ::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}},
+                tracker,
                 ρ       ::Float64,
                 gd_iter ::Int64,
                 warmup  ::Dict{Symbol, Array{Float64}},
@@ -289,7 +289,7 @@ end
 function update(::Type{Val{:NegativeBinomial}},
                 A            ::Array{MaybeMissing{Float64}},
                 Y12          ::Array{Float64},
-                tracker      ::Dict{Symbol, Dict{Symbol, Array{<:CartesianIndex}}},
+                tracker,
                 ρ            ::Float64,
                 gd_iter      ::Int64,
                 warmup       ::Dict{Symbol, Array{Float64}},
@@ -483,7 +483,53 @@ end
 # function destandardize(A, type_tracker, estimators)
 #   A[tracker[:Gaussian]]] .= (A[tracker] .* estimators[:Gaussian][:σ]) .+ estimators[:Gaussian][:μ]
 # end
+struct OneShotADMM end
 
+function Concepts.complete(model::OneShotADMM;
+                           A::Array{MaybeMissing{Float64}} = nothing,
+                           α::Float64                       = maximum(A[findall(x -> !ismissing(x),A)]),
+                           λ::Float64                       = 5e-1,
+                           μ::Float64                       = 5e-4,
+                           ρ::Float64                       = 0.3,
+                           τ::Float64                       = 1.618,
+                           maxiter::Int64                   = 200,
+                           stoptol::Float64                 = 1e-5,
+                           use_autodiff::Bool               = false,
+                           gd_iter::Int64                   = 50,
+                           debug_mode::Bool                 = false,
+                           interactive_plot                 = false,
+                           type_assignment                  = nothing,
+                           warmup                           = nothing,
+                           start_var                        = nothing,
+                           dynamic_ρ                        = true,
+                           user_input_estimators            = nothing,
+                           project_rank                     = nothing,
+                           io::IO                           = Base.stdout,
+                           eigen_solver                     = KrylovMethods(),
+                           closed_form_update               = false)
+    return complete(;A = A,
+                    α = α,
+                    λ = λ,
+                    μ = μ,
+                    ρ = ρ,
+                    τ = τ,
+                    maxiter = maxiter,
+                    stoptol = stoptol,
+                    use_autodiff = use_autodiff,
+                    gd_iter = gd_iter,
+                    debug_mode = debug_mode,
+                    interactive_plot = interactive_plot,
+                    type_assignment = type_assignment,
+                    warmup = warmup,
+                    start_var = start_var,
+                    dynamic_ρ,
+                    user_input_estimators = user_input_estimators,
+                    project_rank = project_rank,
+                    io = io,
+                    eigen_solver = eigen_solver,
+                    closed_form_update = closed_form_update)
+end
+                          
 
 
 function Concepts.complete(;A::Array{MaybeMissing{Float64}} = nothing,
@@ -499,6 +545,8 @@ function Concepts.complete(;A::Array{MaybeMissing{Float64}} = nothing,
                            debug_mode::Bool                 = false,
                            interactive_plot                 = false,
                            type_assignment                  = nothing,
+                           warmup                           = nothing,
+                           start_var                        = nothing,
                            dynamic_ρ                        = true,
                            user_input_estimators            = nothing,
                            project_rank                     = nothing,
@@ -518,11 +566,19 @@ function Concepts.complete(;A::Array{MaybeMissing{Float64}} = nothing,
     X::Array{Float64, 2}                 = zeros(d1 + d2,  d1 + d2)
     W::Array{Float64, 2}                 = zeros(d1 + d2,  d1 + d2)
     C::Array{Float64, 2}                 = zeros(d1 + d2,  d1 + d2)
+    if !isnothing(start_var)
+        Z = start_var[:Z]
+        X = start_var[:X]
+        W = start_var[:W]
+        C = start_var[:C]
+    end
     Xinput::Array{Float64, 2}            = zeros(d1 + d2,  d1 + d2)
     II                                   = sparse(1.0I, d1 + d2, d1 + d2)
     tracker, type_tracker                = initialize_trackers(A, type_assignment)
     # initialize warmup input for various gradient descent procedures
-    warmup::Dict{Symbol, Array{Float64}} = initialize_warmup(tracker, A)
+    if isnothing(warmup)
+        warmup::Dict{Symbol, Array{Float64}} = initialize_warmup(tracker, A)
+    end
     # initialize various estimators 
     estimators::Dict{Symbol, Any}        = initialize_estimators(tracker, A, user_input_estimators)
     # print optimization path table header
@@ -560,7 +616,15 @@ function Concepts.complete(;A::Array{MaybeMissing{Float64}} = nothing,
         end
     end
     completedMatrix = C[1:d1, (d1+1):(d1+d2)]
-    return completedMatrix, type_tracker, tracker
+    last_info = Dict(:Z => Z,
+                     :X => X,
+                     :W => W,
+                     :C => C)
+    return completedMatrix, type_tracker, tracker, last_info
 end
+
+include("./ChainedADMM.jl")
+
+
 
 end

@@ -62,7 +62,8 @@ const FLAG_TEST_UTILITY_BATCHUTILS               = false
 const FLAG_TEST_SGD_BERNOULLI                    = false
 const FLAG_TEST_SGD_GAMMA                        = false
 
-const FLAG_TEST_ALGO_ALM                         = true
+const FLAG_TEST_CHAINED_ADMM                     = true
+const FLAG_TEST_ALGO_ALM                         = false
 
 
 # TODO
@@ -190,6 +191,12 @@ FLAG_TEST_SGD_GAMMA ?
 
 FLAG_TEST_ALGO_ALM ?
     include("test_runner_algo_alm.jl")         : @info @sprintf("Skipped: ALGO[ALM]")
+
+FLAG_TEST_CHAINED_ADMM ?
+    include("test_runner_chained_admm.jl")     : @info @sprintf("Skipped: ALGO[Chained ADMM]")
+
+
+
 #==============================================================================#
 #                                VISUAL SCRIPTS                                #
 #==============================================================================#

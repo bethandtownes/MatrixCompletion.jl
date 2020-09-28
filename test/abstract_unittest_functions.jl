@@ -25,10 +25,6 @@ import Distributions, Random
 import Serialization
 
 
-
-
-
-
 function unit_test_train_subloss(dist               = Poisson();
                                  gradient_eval      = Losses.provide(Loss{Poisson}()),
                                  input_distribution = Distributions.Poisson(5),
@@ -157,4 +153,4 @@ end
 
 
 # const GLOBAL_SIMULATION_RESULTS_DIR = "/home/jasonsun0310/datavolume/matrix_completion_simulation_result/"
-const GLOBAL_SIMULATION_RESULTS_DIR = "/Users/daqiansun/matrix_completion_simulation_result/"
+const GLOBAL_SIMULATION_RESULTS_DIR = "/home/jasonsun/mcdata/"
