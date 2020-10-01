@@ -619,7 +619,8 @@ function Concepts.complete(;A::Array{MaybeMissing{Float64}} = nothing,
     last_info = Dict(:Z => Z,
                      :X => X,
                      :W => W,
-                     :C => C)
+                     :C => C,
+                     :warmup => warmup)
     return completedMatrix, type_tracker, tracker, last_info
 end
 

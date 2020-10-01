@@ -1,9 +1,9 @@
 @testset "$(format("Chained ADMM: Bernoulli"))"  begin
     let
         Random.seed!(65536)
-        ROW = 100
-        COL = 100
-        for input_rank in collect(20:5:40)
+        ROW = 500
+        COL = 500
+        for input_rank in collect(80:10:120)
             for input_sample in collect(50:5:90)
                 try
                     @show(Pair(input_rank, input_sample))
@@ -14,7 +14,7 @@
                     manual_type_matrix .= :Bernoulli
                     let 
                         RESULTS_DIR    = GLOBAL_SIMULATION_RESULTS_DIR *
-                            "bernoulli/small(" * string(ROW) * "x" * string(COL) * ")" * "(vary_missing_200_iter)/" *
+                            "bernoulli/small(" * string(ROW) * "x" * string(COL) * ")" * "(vary_missing_200_iter_max)/" *
                             "rank" * string(input_rank) * "/"  *
                             "sample" * string(input_sample) * "/oneshot/"
                         LOG_FILE_NAME  = "io.log"
@@ -25,7 +25,7 @@
                         io = open(LOG_FILE_PATH, "w")
                         completed_matrix, type_tracker, tracker, imputed = complete(OneShotADMM(),
                                                                                     A               = input_matrix,
-                                                                                    maxiter         = 200,
+                                                                                    maxiter         = 1000,
                                                                                     ρ               = 0.3,
                                                                                     use_autodiff    = false,
                                                                                     gd_iter         = 3,
@@ -36,7 +36,6 @@
                         predicted_matrix = predict(MatrixCompletionModel(),
                                                    completed_matrix = completed_matrix,
                                                    type_tracker     = type_tracker)
-
                         
                         summary_object  = summary(MatrixCompletionModel(),
                                                   predicted_matrix = predicted_matrix,
@@ -52,9 +51,10 @@
                         print(io, JSON.json(summary_object, 4))
                         close(io)
                     end
+                    
                     let 
                         RESULTS_DIR    = GLOBAL_SIMULATION_RESULTS_DIR *
-                            "bernoulli/small(" * string(ROW) * "x" * string(COL) * ")" * "(vary_missing_200_iter)/" *
+                            "bernoulli/small(" * string(ROW) * "x" * string(COL) * ")" * "(vary_missing_200_iter_max)/" *
                             "rank" * string(input_rank) * "/"  *
                             "sample" * string(input_sample) * "/chained/"
                         LOG_FILE_NAME  = "io.log"

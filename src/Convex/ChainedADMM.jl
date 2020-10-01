@@ -85,20 +85,20 @@ function Concepts.complete(model::ChainedADMM;
                                                                                                  debug_mode = debug_mode,
                                                                                                  interactive_plot = interactive_plot,
                                                                                                  type_assignment = type_assignment,
-                                                                                                 # warmup = warmup,
+
                                                                                                  dynamic_ρ = dynamic_ρ,
                                                                                                  user_input_estimators = user_input_estimators,
                                                                                                  project_rank = project_rank,
                                                                                                  io = io,
                                                                                                  eigen_solver = eigen_solver,
                                                                                                  closed_form_update = closed_form_update)
-        # predicted_matrix = predict(MatrixCompletionModel(),
-        #                            completed_matrix = result_completed_matrix,
-        #                            type_tracker     = result_type_tracker)
+        predicted_matrix = predict(MatrixCompletionModel(),
+                                   completed_matrix = result_completed_matrix,
+                                   type_tracker     = result_type_tracker)
 
         # @show("update imputed")
         for index in block_samples
-            imputed[index] = result_completed_matrix[index]
+            imputed[index] = predicted_matrix[index]
         end
         
         # if haskey(tracker, :Bernoulli) && length(tracker[:Bernoulli][:Observed]) > 0
