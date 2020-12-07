@@ -166,12 +166,15 @@ include("./Library/MathLib.jl")
 # include("./NonConvex/lowrankmodels/LowRankModels.jl")
 include("./Convex/ADMM.jl")
 include("./NonConvex/chained_glrm.jl")
+include("./NonConvex/chained_equation.jl")
 
 @api OneShotADMM      ADMM.OneShotADMM
 @api ChainedADMM      ADMM.ChainedADMM
 @api ChainedALM       ALM.ChainedALM
 @api OneShotALM       ALM.OneShotALM
-@api ProxGradParams   LowRankModels.ProxGradParams 
+@api MICE ChainedEquations.MICE
+@api ProxGradParams   LowRankModels.ProxGradParams
+
 
 
 

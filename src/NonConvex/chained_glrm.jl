@@ -20,7 +20,6 @@ struct OneShotALM end
 
 struct MeanImputation end
 
-struct ChainedEquations end
 
 struct ChainedTruncatedSVD end
 

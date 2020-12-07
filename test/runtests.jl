@@ -13,15 +13,6 @@ using MatrixCompletion
 
 
 
-
-# legacy code to be refactored soon!!
-
-# const to = TimerOutput()
-
-
-
-
-
 #==============================================================================#
 #                               TEST OPTIONS                                   #
 #==============================================================================#
@@ -62,7 +53,7 @@ const FLAG_TEST_UTILITY_BATCHUTILS               = false
 const FLAG_TEST_SGD_BERNOULLI                    = false
 const FLAG_TEST_SGD_GAMMA                        = false
 
-const FLAG_TEST_CHAINED_ADMM                     = true
+const FLAG_TEST_CHAINED_ADMM                     = false
 const FLAG_TEST_ALGO_ALM                         = false
 
 
@@ -84,6 +75,7 @@ const FLAG_SIMULATION_ADMM_POISSON               = false
 const FLAG_SIMULATION_ADMM_GAUSSIAN_BERNOULLI    = false
 const FLAG_SIMULATION_ADMM_NEGATIVE_BINOMIAL     = false
 const FLAG_SIMULATION_ADMM_MIXED                 = false
+const FLAG_SIMULATION_CHAINED_EQ                 = true
 
 
 #==============================================================================#
@@ -97,6 +89,10 @@ const FLAG_VISUAL_RANDOM_OBJECTS = false
 #==============================================================================#
 #                             SIMULATION SCRIPTS                               #
 #==============================================================================#
+
+FLAG_SIMULATION_CHAINED_EQ ?
+  include("simulation_chain_eq.jl")                : @info @sprintf("Skipped: Simulation [Chained Equation]")
+
 FLAG_SIMULATION_ADMM_GAMMA ?
   include("simulation_runner_gamma.jl")              : @info @sprintf("Skipped: Simulation[vary rank] Gamma")
 
